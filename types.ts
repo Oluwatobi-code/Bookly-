@@ -157,7 +157,7 @@ export interface BusinessProfile {
 
 export type ExtractionResult = ExtractedSale | ExtractedProduct | ExtractedExpense;
 
-export type AppView = 'inventory' | 'crm' | 'settings' | 'onboarding' | 'dashboard' | 'expenses' | 'sales';
+export type AppView = 'inventory' | 'crm' | 'settings' | 'onboarding' | 'dashboard' | 'ledger';
 
 export interface FilterState {
   customerHandles: string[];

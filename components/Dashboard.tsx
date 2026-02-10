@@ -227,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ products, customers, transactions
               <ActionButton icon={<ShoppingCart size={18} />} label="New Sale" onClick={onOpenManualSale} color="bg-emerald-500" />
               <ActionButton icon={<Plus size={18} />} label="Add Stock" onClick={() => onNavigate('inventory')} color="bg-[#0F172A]" />
               <ActionButton icon={<UsersIcon size={18} />} label="New Lead" onClick={() => onNavigate('crm')} color="bg-blue-500" />
-              <ActionButton icon={<DollarSign size={18} />} label="Log Expense" onClick={() => onNavigate('expenses')} color="bg-red-500" />
+              <ActionButton icon={<DollarSign size={18} />} label="Log Expense" onClick={() => onNavigate('ledger')} color="bg-red-500" />
             </div>
           </div>
         )}

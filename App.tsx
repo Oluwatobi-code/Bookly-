@@ -13,7 +13,9 @@ import {
   LogOut,
   ChevronRight,
   Bell,
-  Check
+  Check,
+  CreditCard,
+  BookText
 } from 'lucide-react';
 import { Product, Customer, Transaction, AppView, SalesSource, ExtractedSale, ExtractedProduct, BusinessProfile, Expense, ExtractedExpense, FilterState, Notification, TransactionStatus } from './types';
 import Inventory from './components/Inventory';
@@ -24,6 +26,7 @@ import Onboarding from './components/Onboarding';
 import HoverBot from './components/HoverBot';
 import Expenses from './components/Expenses';
 import SalesView from './components/SalesView';
+import LedgerView from './components/LedgerView';
 import AddProductModal from './components/AddProductModal';
 import AddCustomerModal from './components/AddCustomerModal';
 import InvoiceModal from './components/InvoiceModal';
@@ -81,14 +84,14 @@ const App: React.FC = () => {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
-      if (t.isArchived && view !== 'sales') return false; 
+      if (t.isArchived) return false; 
       if (filters.platforms.length > 0 && !filters.platforms.includes(t.source)) return false;
       if (filters.status.length > 0 && !filters.status.includes(t.status)) return false;
       if (filters.productNames.length > 0 && !filters.productNames.includes(t.productName)) return false;
       if (filters.customerHandles.length > 0 && !filters.customerHandles.includes(t.customerHandle)) return false;
       return true;
     });
-  }, [transactions, filters, view]);
+  }, [transactions, filters]);
 
   const commitSale = (saleData: ExtractedSale) => {
     const timestamp = new Date().toISOString();
@@ -188,10 +191,9 @@ const App: React.FC = () => {
           <span className="text-[#0F172A] font-black text-xl">B</span>
         </div>
         <NavItem active={view === 'dashboard'} icon={<LayoutDashboard size={24} />} onClick={() => setView('dashboard')} label="Home" />
-        <NavItem active={view === 'sales'} icon={<History size={24} />} onClick={() => setView('sales')} label="Ledger" />
+        <NavItem active={view === 'ledger'} icon={<BookText size={24} />} onClick={() => setView('ledger')} label="Ledger" />
         <NavItem active={view === 'inventory'} icon={<ShoppingBag size={24} />} onClick={() => setView('inventory')} label="Stock" />
         <NavItem active={view === 'crm'} icon={<Users size={24} />} onClick={() => setView('crm')} label="CRM" />
-        <NavItem active={view === 'expenses'} icon={<Wallet size={24} />} onClick={() => setView('expenses')} label="Expenses" />
         <NavItem active={view === 'settings'} icon={<SettingsIcon size={24} />} onClick={() => setView('settings')} label="Setup" />
         
         <div className="mt-auto space-y-4">
@@ -208,7 +210,7 @@ const App: React.FC = () => {
       {/* Mobile Tab Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0F172A] border-t border-white/10 flex items-center justify-around px-6 z-[200]">
         <MobileNavItem active={view === 'dashboard'} icon={<LayoutDashboard size={24} />} onClick={() => setView('dashboard')} />
-        <MobileNavItem active={view === 'sales'} icon={<History size={24} />} onClick={() => setView('sales')} />
+        <MobileNavItem active={view === 'ledger'} icon={<BookText size={24} />} onClick={() => setView('ledger')} />
         <div className="relative -top-6">
           <button 
             onClick={() => setIsHoverBotActive(!isHoverBotActive)}
@@ -223,9 +225,25 @@ const App: React.FC = () => {
 
       <main className="flex-1 px-6 md:px-8 md:pl-28 lg:pl-32 max-w-[1440px] mx-auto w-full pt-16 md:pt-16 pb-32 md:pb-8 min-h-screen">
         {view === 'dashboard' && <Dashboard products={products} customers={customers} transactions={filteredTransactions.filter(t => !t.isArchived)} expenses={expenses} onNavigate={setView} businessProfile={businessProfile} onOpenManualSale={() => setIsManualSaleModalOpen(true)} />}
-        {view === 'sales' && <SalesView transactions={filteredTransactions} filters={filters} setFilters={setFilters} products={products} customers={customers} vipThreshold={businessProfile?.vipThreshold || 5} onViewInvoice={setViewingTransaction} onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))} onEdit={setEditingTransaction} currency={currency} onStatusChange={handleUpdateTransactionStatus} />}
+        {view === 'ledger' && (
+          <LedgerView
+            transactions={transactions}
+            expenses={expenses}
+            filters={filters}
+            setFilters={setFilters}
+            products={products}
+            customers={customers}
+            vipThreshold={businessProfile?.vipThreshold || 5}
+            onViewInvoice={setViewingTransaction}
+            onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))}
+            onEdit={setEditingTransaction}
+            currency={currency}
+            onStatusChange={handleUpdateTransactionStatus}
+            onAddExpense={(e) => setExpenses(prev => [{...e, id: Math.random().toString()}, ...prev])}
+            businessProfile={businessProfile}
+          />
+        )}
         {view === 'inventory' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}
-        {view === 'expenses' && <Expenses expenses={expenses} onAddExpense={(e) => setExpenses(prev => [{...e, id: Math.random().toString()}, ...prev])} businessProfile={businessProfile} />}
         {view === 'crm' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
         {view === 'settings' && <Settings businessProfile={businessProfile} setBusinessProfile={setBusinessProfile} />}
       </main>
