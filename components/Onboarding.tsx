@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Shield, 
@@ -84,7 +85,16 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     stockThreshold: 5,
     persistenceMode: 'local',
     whatsappSyncEnabled: true,
-    activePlatforms: ['WhatsApp']
+    notificationsEnabled: true,
+    activePlatforms: ['WhatsApp'],
+    dashboardWidgets: {
+      statCards: true,
+      revenueTrend: true,
+      topPerformer: true,
+      quickActions: true,
+      inventoryHealth: true,
+      channels: true
+    }
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -598,7 +608,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 <option value="">Select...</option>
                 <option value="Fashion">Fashion</option>
                 <option value="Tech">Consumer Tech</option>
-                <option value="Services">Services</option>
+                <option value="Services">Professional Services</option>
                 <option value="Retail">General Retail</option>
               </select>
             </div>

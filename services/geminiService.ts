@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { ExtractionResult, Product } from "../types";
 
@@ -34,6 +35,7 @@ INTENT CATEGORIES:
 INSTRUCTIONS:
 - Match products to this list: ${inventoryList}.
 - If "inquiry" is detected, provide "suggestedActions" (e.g., "Send Account Details", "Calculate Shipping").
+- Look for delivery or shipping fees in sales dialogue and extract into "deliveryFee".
 - "confidence": "high", "medium", or "low".
 - Return ONLY valid JSON.`;
 
@@ -67,6 +69,7 @@ INSTRUCTIONS:
                 properties: {
                   handle: { type: Type.STRING },
                   platform: { type: Type.STRING },
+                  deliveryFee: { type: Type.NUMBER },
                   items: {
                     type: Type.ARRAY,
                     items: {

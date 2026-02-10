@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   ShoppingBag, 
   Users, 
@@ -11,9 +11,11 @@ import {
   AlertTriangle,
   X,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Bell,
+  Check
 } from 'lucide-react';
-import { Product, Customer, Transaction, AppView, SalesSource, ExtractedSale, ExtractedProduct, BusinessProfile, Expense, ExtractedExpense, FilterState } from './types';
+import { Product, Customer, Transaction, AppView, SalesSource, ExtractedSale, ExtractedProduct, BusinessProfile, Expense, ExtractedExpense, FilterState, Notification, TransactionStatus } from './types';
 import Inventory from './components/Inventory';
 import CRM from './components/CRM';
 import Settings from './components/Settings';
@@ -39,9 +41,10 @@ const App: React.FC = () => {
   const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [pendingSale, setPendingSale] = useState<ExtractedSale | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const [filters, setFilters] = useState<FilterState>({
-    customerHandles: [], platforms: [], dateRange: { start: '', end: '' }, months: [], productNames: [], tiers: []
+    customerHandles: [], platforms: [], status: [], dateRange: { start: '', end: '' }, months: [], productNames: [], tiers: []
   });
 
   const [products, setProducts] = useState<Product[]>([
@@ -58,6 +61,18 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
+  const notify = (title: string, message: string, type: 'success' | 'info' | 'warning' = 'info') => {
+    if (businessProfile && !businessProfile.notificationsEnabled) return;
+    const newNote: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      title, message, type, timestamp: Date.now()
+    };
+    setNotifications(prev => [newNote, ...prev]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== newNote.id));
+    }, 5000);
+  };
+
   const handleLogout = () => {
     setBusinessProfile(null);
     setView('onboarding');
@@ -68,6 +83,7 @@ const App: React.FC = () => {
     return transactions.filter(t => {
       if (t.isArchived && view !== 'sales') return false; 
       if (filters.platforms.length > 0 && !filters.platforms.includes(t.source)) return false;
+      if (filters.status.length > 0 && !filters.status.includes(t.status)) return false;
       if (filters.productNames.length > 0 && !filters.productNames.includes(t.productName)) return false;
       if (filters.customerHandles.length > 0 && !filters.customerHandles.includes(t.customerHandle)) return false;
       return true;
@@ -80,20 +96,26 @@ const App: React.FC = () => {
 
     saleData.customers?.forEach(customer => {
       const source = customer.platform || businessProfile?.defaultSalesSource || 'WhatsApp';
+      const paymentMethod = customer.paymentMethod || 'Cash/Transfer';
+      const deliveryFee = customer.deliveryFee || 0;
+      const feePercent = paymentMethod === 'Bookly Wallet' ? 0.025 : 0;
+      
       customer.items?.forEach(item => {
         const product = products.find(p => p.name.toLowerCase().includes(item.productName.toLowerCase())) || products[0] || { id: 'temp', price: 0, costPrice: 0, name: item.productName };
         const qty = item.quantity || 1;
         
-        // Priority: Edited unitPrice > Extracted unitPrice > Catalog price
-        const priceToUse = typeof item.unitPrice === 'number' ? item.unitPrice : product.price;
-        const total = priceToUse * qty;
+        const basePrice = typeof item.unitPrice === 'number' ? item.unitPrice : product.price;
+        const subtotal = basePrice * qty;
+        const fee = subtotal * feePercent;
+        const total = subtotal + fee + (newTransactions.length === 0 ? deliveryFee : 0); // Only add delivery fee once per order block
 
         const newT: Transaction = {
           id: Math.random().toString(36).substr(2, 9),
           customerId: 'new', customerHandle: customer.handle,
           productId: product.id, productName: product.name || item.productName,
           quantity: qty, total, costTotal: (product.costPrice || 0) * qty,
-          timestamp, status: 'confirmed', source, isArchived: false, editHistory: []
+          deliveryFee: newTransactions.length === 0 ? deliveryFee : 0,
+          timestamp, status: 'confirmed', source, paymentMethod, fee, isArchived: false, editHistory: []
         };
         
         newTransactions.push(newT);
@@ -109,21 +131,35 @@ const App: React.FC = () => {
         setCustomers(prev => prev.map(c => c.handle === customer.handle ? { ...c, orderCount: c.orderCount + 1, ltv: c.ltv + val, lastActive: 'Just now' } : c));
       } else if (customer.handle) {
         setCustomers(prev => [{ id: Math.random().toString(36).substr(2, 9), handle: customer.handle, name: customer.handle.replace('@', ''), orderCount: 1, ltv: val, channel: source, lastActive: 'Just now' }, ...prev]);
+        notify("New Customer", `Profile created for ${customer.handle}`, "info");
       }
     });
 
     if (newTransactions.length > 0) {
       setTransactions(prev => [...newTransactions, ...prev]);
-      // Viewing the first one created in this batch
       setViewingTransaction(newTransactions[0]);
+      notify("Order Finalized", `${newTransactions.length} items logged successfully.`, "success");
     }
 
     setPendingSale(null);
     setIsHoverBotActive(false);
   };
 
+  const handleUpdateTransactionStatus = (id: string, status: TransactionStatus) => {
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+    notify("Ledger Updated", `Transaction ${id.substr(0,4)} marked as ${status}`, "success");
+  };
+
+  const handleUpdateStock = (newProducts: Product[]) => {
+    setProducts(newProducts);
+    notify("Stock Updated", "Inventory changes saved.", "success");
+  };
+
   if (view === 'onboarding') {
-    return <Onboarding onComplete={(profile) => { setBusinessProfile(profile); setView('dashboard'); }} />;
+    return <Onboarding onComplete={(profile) => { 
+      setBusinessProfile({...profile, notificationsEnabled: true}); 
+      setView('dashboard'); 
+    }} />;
   }
 
   const currency = businessProfile?.currency === 'NGN' ? '₦' : '$';
@@ -131,6 +167,22 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F0FDF4] text-[#0F172A] font-sans flex flex-col md:flex-row">
       
+      {/* Toast Notifications */}
+      <div className="fixed top-6 right-6 z-[1000] flex flex-col gap-3 pointer-events-none">
+        {notifications.map(note => (
+          <div key={note.id} className="pointer-events-auto bg-[#0f0f0f] border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[280px] animate-in slide-in-from-right duration-300">
+             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${note.type === 'success' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-blue-500/20 text-blue-400'}`}>
+                {note.type === 'success' ? <Check size={20} /> : <Bell size={20} />}
+             </div>
+             <div>
+                <p className="text-xs font-black text-white">{note.title}</p>
+                <p className="text-[10px] text-slate-400">{note.message}</p>
+             </div>
+             <button onClick={() => setNotifications(prev => prev.filter(n => n.id !== note.id))} className="ml-auto p-1 text-slate-600 hover:text-white"><X size={14} /></button>
+          </div>
+        ))}
+      </div>
+
       <nav className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-20 bg-[#0F172A] border-r border-white/5 py-8 items-center space-y-6 z-[100] nav-glass">
         <div className="w-12 h-12 bg-[#2DD4BF] flex items-center justify-center rounded-2xl mb-8 transform -rotate-3 cursor-pointer" onClick={() => setView('dashboard')}>
           <span className="text-[#0F172A] font-black text-xl">B</span>
@@ -149,39 +201,37 @@ const App: React.FC = () => {
           >
             <Sparkles size={24} />
           </button>
-          <button 
-            onClick={handleLogout}
-            className="w-12 h-12 rounded-xl flex items-center justify-center text-red-300 hover:bg-red-500/20 transition-all"
-          >
-            <LogOut size={24} />
-          </button>
+          <button onClick={handleLogout} className="w-12 h-12 rounded-xl flex items-center justify-center text-red-300 hover:bg-red-500/20 transition-all"><LogOut size={24} /></button>
         </div>
       </nav>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0F172A] border-t border-white/5 flex items-center justify-around z-[100] nav-glass px-4">
-        <MobileNavItem active={view === 'dashboard'} icon={<LayoutDashboard size={22} />} onClick={() => setView('dashboard')} />
-        <MobileNavItem active={view === 'sales'} icon={<History size={22} />} onClick={() => setView('sales')} />
-        <button 
-          onClick={() => setIsHoverBotActive(!isHoverBotActive)} 
-          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isHoverBotActive ? 'bg-[#2DD4BF] text-[#0F172A]' : 'bg-white/10 text-[#2DD4BF]'}`}
-        >
-          <Sparkles size={22} />
-        </button>
-        <MobileNavItem active={view === 'inventory'} icon={<ShoppingBag size={22} />} onClick={() => setView('inventory')} />
-        <MobileNavItem active={view === 'settings'} icon={<SettingsIcon size={22} />} onClick={() => setView('settings')} />
+      {/* Mobile Tab Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0F172A] border-t border-white/10 flex items-center justify-around px-6 z-[200]">
+        <MobileNavItem active={view === 'dashboard'} icon={<LayoutDashboard size={24} />} onClick={() => setView('dashboard')} />
+        <MobileNavItem active={view === 'sales'} icon={<History size={24} />} onClick={() => setView('sales')} />
+        <div className="relative -top-6">
+          <button 
+            onClick={() => setIsHoverBotActive(!isHoverBotActive)}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all ${isHoverBotActive ? 'bg-[#2DD4BF] text-[#0F172A]' : 'bg-white text-[#0F172A]'}`}
+          >
+            <Sparkles size={28} />
+          </button>
+        </div>
+        <MobileNavItem active={view === 'inventory'} icon={<ShoppingBag size={24} />} onClick={() => setView('inventory')} />
+        <MobileNavItem active={view === 'settings'} icon={<SettingsIcon size={24} />} onClick={() => setView('settings')} />
       </nav>
 
-      <main className="flex-1 px-6 md:px-8 md:pl-28 lg:pl-32 max-w-[1440px] mx-auto w-full pt-16 md:pt-16 pb-24 md:pb-8 min-h-screen">
+      <main className="flex-1 px-6 md:px-8 md:pl-28 lg:pl-32 max-w-[1440px] mx-auto w-full pt-16 md:pt-16 pb-32 md:pb-8 min-h-screen">
         {view === 'dashboard' && <Dashboard products={products} customers={customers} transactions={filteredTransactions.filter(t => !t.isArchived)} expenses={expenses} onNavigate={setView} businessProfile={businessProfile} onOpenManualSale={() => setIsManualSaleModalOpen(true)} />}
-        {view === 'sales' && <SalesView transactions={filteredTransactions} filters={filters} setFilters={setFilters} products={products} customers={customers} vipThreshold={businessProfile?.vipThreshold || 5} onViewInvoice={setViewingTransaction} onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))} onEdit={setEditingTransaction} currency={currency} />}
-        {view === 'inventory' && <Inventory products={products} setProducts={setProducts} onOpenAddProduct={() => setIsAddProductModalOpen(true)} />}
+        {view === 'sales' && <SalesView transactions={filteredTransactions} filters={filters} setFilters={setFilters} products={products} customers={customers} vipThreshold={businessProfile?.vipThreshold || 5} onViewInvoice={setViewingTransaction} onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))} onEdit={setEditingTransaction} currency={currency} onStatusChange={handleUpdateTransactionStatus} />}
+        {view === 'inventory' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}
         {view === 'expenses' && <Expenses expenses={expenses} onAddExpense={(e) => setExpenses(prev => [{...e, id: Math.random().toString()}, ...prev])} businessProfile={businessProfile} />}
         {view === 'crm' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
         {view === 'settings' && <Settings businessProfile={businessProfile} setBusinessProfile={setBusinessProfile} />}
       </main>
 
-      <HoverBot inventory={products} onConfirmSale={(s) => setPendingSale(s)} onConfirmProduct={(p) => setProducts(prev => [{...p, id: Math.random().toString(), totalSales: 0}, ...prev])} onConfirmExpense={(e) => setExpenses(prev => [{...e, id: Math.random().toString(), timestamp: new Date().toISOString()}, ...prev])} isActive={isHoverBotActive} setIsActive={setIsHoverBotActive} businessProfile={businessProfile} customers={customers} />
-      <AddProductModal isOpen={isAddProductModalOpen} onClose={() => setIsAddProductModalOpen(false)} onAdd={(p) => setProducts(prev => [{...p, id: Math.random().toString(), totalSales: 0}, ...prev])} />
+      <HoverBot inventory={products} onConfirmSale={(s) => setPendingSale(s)} onConfirmProduct={(p) => handleUpdateStock([...products, {...p, id: Math.random().toString(), totalSales: 0}])} onConfirmExpense={(e) => setExpenses(prev => [{...e, id: Math.random().toString(), timestamp: new Date().toISOString()}, ...prev])} isActive={isHoverBotActive} setIsActive={setIsHoverBotActive} businessProfile={businessProfile} customers={customers} />
+      <AddProductModal isOpen={isAddProductModalOpen} onClose={() => setIsAddProductModalOpen(false)} onAdd={(p) => handleUpdateStock([...products, {...p, id: Math.random().toString(), totalSales: 0}])} />
       <AddCustomerModal isOpen={isAddCustomerModalOpen} onClose={() => setIsAddCustomerModalOpen(false)} onAdd={(c) => setCustomers(prev => [{...c, id: Math.random().toString(), orderCount: 0, ltv: 0, lastActive: 'New'}, ...prev])} />
       <ManualEntryModal isOpen={isManualSaleModalOpen} onClose={() => setIsManualSaleModalOpen(false)} inventory={products} onConfirm={(s) => setPendingSale(s)} businessProfile={businessProfile} customers={customers} />
       <InvoiceModal isOpen={!!viewingTransaction} onClose={() => setViewingTransaction(null)} transaction={viewingTransaction} businessProfile={businessProfile} customer={customers.find(c => c.handle === viewingTransaction?.customerHandle) || null} />
@@ -192,25 +242,14 @@ const App: React.FC = () => {
 };
 
 const NavItem: React.FC<{ active: boolean, icon: React.ReactNode, onClick: () => void, label: string }> = ({ active, icon, onClick, label }) => (
-  <button 
-    onClick={onClick} 
-    className={`group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all ${active ? 'bg-[#2DD4BF] text-[#0F172A]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}
-    aria-label={label}
-  >
+  <button onClick={onClick} className={`group relative flex items-center justify-center w-12 h-12 rounded-xl transition-all ${active ? 'bg-[#2DD4BF] text-[#0F172A]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
     {icon}
-    <span className="absolute left-full ml-4 px-3 py-1.5 bg-[#0F172A] text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[200]">
-      {label}
-    </span>
+    <span className="absolute left-full ml-4 px-3 py-1.5 bg-[#0F172A] text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[200]">{label}</span>
   </button>
 );
 
 const MobileNavItem: React.FC<{ active: boolean, icon: React.ReactNode, onClick: () => void }> = ({ active, icon, onClick }) => (
-  <button 
-    onClick={onClick} 
-    className={`flex items-center justify-center w-11 h-11 rounded-xl transition-all ${active ? 'bg-[#2DD4BF] text-[#0F172A]' : 'text-slate-400'}`}
-  >
-    {icon}
-  </button>
+  <button onClick={onClick} className={`flex items-center justify-center w-11 h-11 rounded-xl transition-all ${active ? 'bg-[#2DD4BF] text-[#0F172A]' : 'text-slate-400'}`}>{icon}</button>
 );
 
 export default App;

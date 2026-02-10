@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Product, ProductVariant } from '../types';
-import { X, Package, DollarSign, Database, Tag, FileText, Check, Plus, Trash2, TrendingDown } from 'lucide-react';
+import { X, Package, DollarSign, Database, Tag, FileText, Check, Plus, Trash2, TrendingDown, AlertCircle } from 'lucide-react';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -20,7 +20,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
     costPrice: 0,
     stock: 0,
     category: 'Fashion',
-    description: ''
+    description: '',
+    stockThreshold: 5
   });
 
   const addVariant = () => {
@@ -47,7 +48,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
     });
 
     // Reset
-    setFormData({ name: '', price: 0, costPrice: 0, stock: 0, category: 'Fashion', description: '' });
+    setFormData({ name: '', price: 0, costPrice: 0, stock: 0, category: 'Fashion', description: '', stockThreshold: 5 });
     setVariants([]);
     setHasVariants(false);
     onClose();
@@ -108,19 +109,33 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Category</label>
-            <select 
-              value={formData.category}
-              onChange={e => setFormData({...formData, category: e.target.value})}
-              className="w-full h-14 bg-[#111] border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-bold"
-            >
-              <option value="Fashion">Fashion</option>
-              <option value="Food">Food & Bev</option>
-              <option value="Electronics">Consumer Tech</option>
-              <option value="Services">Professional Services</option>
-              <option value="Home">Home & Decor</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Category</label>
+              <select 
+                value={formData.category}
+                onChange={e => setFormData({...formData, category: e.target.value})}
+                className="w-full h-14 bg-[#111] border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-bold"
+              >
+                <option value="Fashion">Fashion</option>
+                <option value="Food">Food & Bev</option>
+                <option value="Electronics">Consumer Tech</option>
+                <option value="Services">Professional Services</option>
+                <option value="Home">Home & Decor</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                <AlertCircle size={10} /> Stock Alert Threshold
+              </label>
+              <input 
+                type="number" 
+                required
+                value={formData.stockThreshold}
+                onChange={e => setFormData({...formData, stockThreshold: parseInt(e.target.value) || 0})}
+                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-bold text-amber-400"
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-between py-2 px-1">

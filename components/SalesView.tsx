@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Transaction, FilterState, Product, Customer, SalesSource } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Transaction, FilterState, Product, Customer, SalesSource, TransactionStatus } from '../types';
 import { 
   History, 
   FileText, 
@@ -17,7 +17,15 @@ import {
   Edit2,
   Archive,
   Eye,
-  RotateCcw
+  RotateCcw,
+  Printer,
+  ChevronDown,
+  Circle,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  // Fix: Added missing Check icon import
+  Check
 } from 'lucide-react';
 import GlobalFilterBar from './GlobalFilterBar';
 
@@ -32,6 +40,7 @@ interface SalesViewProps {
   onArchive: (id: string) => void;
   onEdit: (transaction: Transaction) => void;
   currency: string;
+  onStatusChange: (id: string, status: TransactionStatus) => void;
 }
 
 const SalesView: React.FC<SalesViewProps> = ({ 
@@ -44,14 +53,20 @@ const SalesView: React.FC<SalesViewProps> = ({
   onViewInvoice,
   onArchive,
   onEdit,
-  currency
+  currency,
+  onStatusChange
 }) => {
   const [showArchived, setShowArchived] = useState(false);
 
   const displayedTransactions = transactions.filter(t => t.isArchived === showArchived);
 
-  const totalVolume = displayedTransactions.reduce((acc, t) => acc + t.total, 0);
-  const totalItems = displayedTransactions.reduce((acc, t) => acc + t.quantity, 0);
+  const stats = useMemo(() => {
+    const vol = displayedTransactions.reduce((acc, t) => acc + t.total, 0);
+    const cost = displayedTransactions.reduce((acc, t) => acc + (t.costTotal || 0), 0);
+    const delivery = displayedTransactions.reduce((acc, t) => acc + (t.deliveryFee || 0), 0);
+    // Profit = Total Revenue - Cost of Goods. (Delivery Fee is considered revenue here but often offset by logistics cost)
+    return { vol, profit: vol - cost - delivery, items: displayedTransactions.reduce((acc, t) => acc + t.quantity, 0) };
+  }, [displayedTransactions]);
 
   const getChannelIcon = (channel: SalesSource) => {
     switch (channel) {
@@ -64,46 +79,57 @@ const SalesView: React.FC<SalesViewProps> = ({
     }
   };
 
+  const exportPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-12">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sales Ledger</h1>
-          <p className="text-gray-500 mt-1">Audit and filter your complete history of chat commerce.</p>
+          <h1 className="text-3xl font-black tracking-tight text-[#0F172A]">Sales Ledger</h1>
+          <p className="text-[#64748B] mt-1 font-medium italic">Audit confirmed sales & payment health.</p>
         </div>
-        <button 
-          onClick={() => setShowArchived(!showArchived)}
-          className={`h-11 px-5 rounded-2xl flex items-center gap-2 font-bold text-sm transition-all border ${
-            showArchived ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-gray-400 border-white/10'
-          }`}
-        >
-          {showArchived ? <Eye size={16} /> : <Archive size={16} />}
-          <span>{showArchived ? 'Viewing Archives' : 'View Archived'}</span>
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={exportPDF}
+            className="h-11 px-5 rounded-2xl bg-[#0F172A] text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:opacity-90 shadow-xl transition-all"
+          >
+            <Printer size={16} /> Export PDF Report
+          </button>
+          <button 
+            onClick={() => setShowArchived(!showArchived)}
+            className={`h-11 px-5 rounded-2xl flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-all border ${
+              showArchived ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-gray-400 border-white/10'
+            }`}
+          >
+            {showArchived ? <Eye size={16} /> : <Archive size={16} />}
+            <span>{showArchived ? 'Archived Records' : 'Archive Bin'}</span>
+          </button>
+        </div>
       </header>
 
-      {/* Summary Cards for Filtered Set */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="cyber-border p-5 rounded-[28px] space-y-1">
-          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Filtered Volume</p>
-          <p className="text-xl font-black text-emerald-400 font-mono">{currency}{totalVolume.toLocaleString()}</p>
+        <div className="cyber-border p-6 rounded-[32px] space-y-1 bg-white">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Filtered Volume</p>
+          <p className="text-2xl font-black text-[#0F172A] font-mono">{currency}{stats.vol.toLocaleString()}</p>
         </div>
-        <div className="cyber-border p-5 rounded-[28px] space-y-1">
-          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Units Sold</p>
-          <p className="text-xl font-black text-white font-mono">{totalItems}</p>
+        <div className="cyber-border p-6 rounded-[32px] space-y-1 bg-[#F0FDF4] border-[#2DD4BF]/20">
+          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Estimated Profit</p>
+          <p className="text-2xl font-black text-emerald-600 font-mono">{currency}{stats.profit.toLocaleString()}</p>
         </div>
-        <div className="cyber-border p-5 rounded-[28px] space-y-1">
-          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Record Count</p>
-          <p className="text-xl font-black text-blue-400 font-mono">{displayedTransactions.length}</p>
+        <div className="cyber-border p-6 rounded-[32px] space-y-1 bg-white">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Units Sold</p>
+          <p className="text-2xl font-black text-[#0F172A] font-mono">{stats.items}</p>
         </div>
-        <div className="cyber-border p-5 rounded-[28px] space-y-1">
-          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Avg Ticket</p>
-          <p className="text-xl font-black text-purple-400 font-mono">{currency}{displayedTransactions.length > 0 ? Math.round(totalVolume / displayedTransactions.length) : 0}</p>
+        <div className="cyber-border p-6 rounded-[32px] space-y-1 bg-white">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Entries</p>
+          <p className="text-2xl font-black text-[#0F172A] font-mono">{displayedTransactions.length}</p>
         </div>
       </div>
 
-      {/* Integrated Filters Component */}
-      <div className="bg-white/[0.02] border border-white/5 p-2 rounded-[32px]">
+      <div className="bg-white/[0.02] border border-white/5 p-2 rounded-[32px] print:hidden">
         <GlobalFilterBar 
           filters={filters} 
           setFilters={setFilters} 
@@ -113,82 +139,79 @@ const SalesView: React.FC<SalesViewProps> = ({
         />
       </div>
 
-      {/* Sales List */}
-      <div className="cyber-border rounded-[32px] overflow-hidden">
+      {/* Sales List Table */}
+      <div className="cyber-border rounded-[32px] overflow-hidden bg-white shadow-sm border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-white/5 text-[10px] uppercase font-black tracking-[0.2em] text-gray-600 bg-white/[0.01]">
-                <th className="px-6 py-5">Date & ID</th>
-                <th className="px-6 py-5">Customer</th>
-                <th className="px-6 py-5">Item Details</th>
-                <th className="px-6 py-5">Source</th>
-                <th className="px-6 py-5 text-right">Total</th>
-                <th className="px-6 py-5 text-right">Actions</th>
+              <tr className="border-b border-gray-100 text-[10px] uppercase font-black tracking-[0.2em] text-gray-400 bg-gray-50/50">
+                <th className="px-6 py-5">Date & Status</th>
+                <th className="px-6 py-5">Lead Handle</th>
+                <th className="px-6 py-5">Order Context</th>
+                <th className="px-6 py-5 text-center">Net Profit</th>
+                <th className="px-6 py-5 text-right">Total Invoice</th>
+                <th className="px-6 py-5 text-right print:hidden">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-gray-50">
               {displayedTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center text-gray-500 italic text-sm">
-                    {showArchived ? 'No archived records found.' : 'No sales match the active filters.'}
+                  <td colSpan={6} className="px-6 py-20 text-center text-gray-400 italic text-sm">
+                    {showArchived ? 'Archive is empty.' : 'No matches found.'}
                   </td>
                 </tr>
               ) : (
-                displayedTransactions.map(t => (
-                  <tr key={t.id} className="group hover:bg-white/[0.03] transition-colors">
-                    <td className="px-6 py-5">
-                      <p className="text-xs font-bold text-white mb-1">{new Date(t.timestamp).toLocaleDateString()}</p>
-                      <p className="text-[9px] font-mono text-gray-600 uppercase">#{t.id.substr(0, 8)}</p>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center">
-                          <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${t.customerHandle}`} className="w-full h-full rounded-full opacity-60" />
+                displayedTransactions.map(t => {
+                  const profit = t.total - (t.costTotal || 0) - (t.deliveryFee || 0);
+                  const isPaid = t.status === 'paid';
+
+                  return (
+                    <tr key={t.id} className="group hover:bg-emerald-50/30 transition-colors">
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-3">
+                           <button 
+                            onClick={() => onStatusChange(t.id, isPaid ? 'confirmed' : 'paid')}
+                            className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${isPaid ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' : 'border-gray-200 text-transparent'}`}
+                           >
+                            <Check size={14} />
+                           </button>
+                           <div>
+                              <p className="text-xs font-black text-[#0F172A]">{new Date(t.timestamp).toLocaleDateString()}</p>
+                              <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>{isPaid ? 'Payment Received' : 'Pending Receipt'}</p>
+                           </div>
                         </div>
-                        <span className="text-xs font-mono text-gray-300">{t.customerHandle}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <p className="text-xs font-bold">{t.productName}</p>
-                      <p className="text-[10px] text-gray-500">Qty: {t.quantity} {t.variant && `• ${t.variant}`}</p>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-white/5 border border-white/5">
-                        {getChannelIcon(t.source)}
-                        <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">{t.source}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <span className="font-mono font-black text-emerald-400 text-sm">{currency}{t.total.toLocaleString()}</span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => onEdit(t)}
-                          className="p-2 bg-white/5 hover:bg-white text-gray-500 hover:text-black rounded-xl transition-all"
-                          title="Edit Transaction"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => onViewInvoice(t)}
-                          className="p-2 bg-white/5 hover:bg-white text-gray-500 hover:text-black rounded-xl transition-all"
-                          title="View Invoice"
-                        >
-                          <FileText size={14} />
-                        </button>
-                        <button 
-                          onClick={() => onArchive(t.id)}
-                          className={`p-2 transition-all rounded-xl ${showArchived ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-black' : 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-black'}`}
-                          title={showArchived ? "Restore Transaction" : "Archive Transaction"}
-                        >
-                          {showArchived ? <RotateCcw size={14} /> : <Archive size={14} />}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-mono font-bold text-slate-500 tracking-tighter">{t.customerHandle}</span>
+                          <div className="p-1 bg-gray-50 rounded-md">{getChannelIcon(t.source)}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <p className="text-xs font-black text-[#0F172A]">{t.productName}</p>
+                        <p className="text-[10px] font-bold text-gray-400">Qty: {t.quantity} {t.deliveryFee > 0 && `• Ship: ${currency}${t.deliveryFee}`}</p>
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <span className={`text-[11px] font-black font-mono ${profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                          {currency}{profit.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <span className="font-mono font-black text-[#0F172A] text-sm">{currency}{t.total.toLocaleString()}</span>
+                      </td>
+                      <td className="px-6 py-5 text-right print:hidden">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => onViewInvoice(t)} className="p-2.5 hover:bg-[#0F172A] hover:text-white rounded-xl text-gray-400 transition-all border border-transparent hover:border-gray-100">
+                            <FileText size={14} />
+                          </button>
+                          <button onClick={() => onArchive(t.id)} className="p-2.5 hover:bg-red-500 hover:text-white rounded-xl text-gray-400 transition-all">
+                            {showArchived ? <RotateCcw size={14} /> : <Archive size={14} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

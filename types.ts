@@ -16,9 +16,12 @@ export interface Product {
   description?: string;
   image?: string;
   variants?: ProductVariant[];
+  stockThreshold?: number; // Per-product threshold
 }
 
 export type SalesSource = 'WhatsApp' | 'Instagram' | 'Facebook' | 'Walk-in' | 'Phone Call' | 'Other';
+export type PaymentMethod = 'Bookly Wallet' | 'Cash/Transfer';
+export type TransactionStatus = 'paid' | 'unpaid' | 'confirmed' | 'cancelled';
 
 export interface Customer {
   id: string;
@@ -45,9 +48,12 @@ export interface Transaction {
   quantity: number;
   total: number;
   costTotal: number; // Stored cost at time of sale
+  deliveryFee: number;
   timestamp: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: TransactionStatus;
   source: SalesSource;
+  paymentMethod: PaymentMethod;
+  fee?: number;
   receiptImage?: string;
   variant?: string;
   address?: string;
@@ -77,8 +83,10 @@ export interface OrderItem {
 export interface ExtractedCustomerSale {
   handle: string;
   platform?: SalesSource;
+  paymentMethod?: PaymentMethod;
   items: OrderItem[];
   orderTotal?: number;
+  deliveryFee?: number;
   address?: string;
 }
 
@@ -89,7 +97,7 @@ export interface ExtractedSale {
   batchTotal?: number;
   confidence: 'high' | 'medium' | 'low';
   
-  // Flat fields for compatibility with UI components that display/edit single sales
+  // Flat fields for compatibility with UI components
   customerHandle?: string;
   items?: OrderItem[];
   totalPrice?: number;
@@ -119,6 +127,15 @@ export interface ExtractedExpense {
   confidence: 'high' | 'medium' | 'low';
 }
 
+export interface DashboardWidgets {
+  statCards: boolean;
+  revenueTrend: boolean;
+  topPerformer: boolean;
+  quickActions: boolean;
+  inventoryHealth: boolean;
+  channels: boolean;
+}
+
 export interface BusinessProfile {
   name: string;
   email: string;
@@ -132,16 +149,10 @@ export interface BusinessProfile {
   stockThreshold: number;
   persistenceMode: 'cloud' | 'local';
   whatsappSyncEnabled: boolean;
+  notificationsEnabled: boolean;
   activePlatforms: SalesSource[];
   consentTimestamp?: string;
-}
-
-export interface ContextItem {
-  id: string;
-  type: 'text' | 'image';
-  content: string; // text or base64
-  timestamp: number;
-  sourceHint?: SalesSource;
+  dashboardWidgets: DashboardWidgets;
 }
 
 export type ExtractionResult = ExtractedSale | ExtractedProduct | ExtractedExpense;
@@ -151,6 +162,7 @@ export type AppView = 'inventory' | 'crm' | 'settings' | 'onboarding' | 'dashboa
 export interface FilterState {
   customerHandles: string[];
   platforms: SalesSource[];
+  status: TransactionStatus[];
   dateRange: {
     start: string; // YYYY-MM-DD
     end: string;   // YYYY-MM-DD
@@ -160,23 +172,10 @@ export interface FilterState {
   tiers: ('VIP' | 'Returning' | 'New')[];
 }
 
-// Added more functional Widget types
-export type WidgetType = 
-  | 'revenue' 
-  | 'overhead' 
-  | 'profit' 
-  | 'contacts' 
-  | 'channels' 
-  | 'burn' 
-  | 'top_products' 
-  | 'pulse' 
-  | 'quick_actions' 
-  | 'inventory_status';
-
-export interface DashboardWidget {
-  id: WidgetType;
-  label: string;
-  visible: boolean;
-  size: 'small' | 'large';
-  description?: string;
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'success' | 'info' | 'warning';
+  timestamp: number;
 }
