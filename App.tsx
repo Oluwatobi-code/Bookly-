@@ -373,10 +373,10 @@ const App: React.FC = () => {
             onAddOrder={order => {
               const id = 'order_' + Math.random().toString(36).substr(2, 9);
               const now = new Date().toISOString();
-              const transaction = {
+              const transaction: Transaction = {
                 id,
                 customerId: '',
-                customerHandle: order.customerName || '',
+                customerHandle: order.customerName || 'Walk-in Customer',
                 productId: '',
                 productName: order.product,
                 quantity: order.quantity,
@@ -385,10 +385,12 @@ const App: React.FC = () => {
                 deliveryFee: 0,
                 timestamp: now,
                 status: order.isPaid ? 'paid' : 'unpaid',
-                source: 'Other',
+                source: order.source as SalesSource,
                 paymentMethod: order.isPaid ? 'Cash/Transfer' : 'Bookly Wallet',
                 editHistory: [],
                 items: [{ productName: order.product, quantity: order.quantity, unitPrice: order.unitPrice }],
+                isArchived: false,
+                fee: 0
               };
               setTransactions(prev => [transaction, ...prev]);
               // Auto-generate document
