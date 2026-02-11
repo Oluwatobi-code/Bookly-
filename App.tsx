@@ -17,7 +17,7 @@ import {
   CreditCard,
   BookText
 } from 'lucide-react';
-import { Product, Customer, Transaction, AppView, SalesSource, ExtractedSale, ExtractedProduct, BusinessProfile, Expense, ExtractedExpense, FilterState, Notification, TransactionStatus } from './types';
+import { Product, Customer, Transaction, AppView, SalesSource, ExtractedSale, ExtractedProduct, BusinessProfile, Expense, ExtractedExpense, FilterState, Notification, TransactionStatus, WalletProfile, WalletTransaction } from './types';
 import Inventory from './components/Inventory';
 import CRM from './components/CRM';
 import Settings from './components/Settings';
@@ -74,6 +74,71 @@ const App: React.FC = () => {
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== newNote.id));
     }, 5000);
+  };
+
+  const handleWalletCreate = (data: any) => {
+    if (!businessProfile) return;
+
+    const newWallet: WalletProfile = {
+      id: Math.random().toString(36).substr(2, 9),
+      enabled: true,
+      balance: 0,
+      currency: businessProfile.currency,
+      accountName: data.businessName,
+      accountNumber: `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+      bankName: 'Bookly Bank',
+      kycStatus: 'verified',
+      kycData: {
+        fullName: data.fullName,
+        dob: data.dob,
+        bvn: data.bvn
+      },
+      pinSet: true,
+      transactions: []
+    };
+
+    setBusinessProfile({
+      ...businessProfile,
+      wallet: newWallet
+    });
+
+    notify('Wallet Created!', `Your business wallet ${newWallet.accountNumber} is now active.`, 'success');
+  };
+
+  const handleWalletTransfer = (amount: number, recipient: string, category: string, description: string) => {
+    if (!businessProfile?.wallet) return;
+
+    const newTransaction: WalletTransaction = {
+      id: Math.random().toString(36).substr(2, 9),
+      amount,
+      type: 'debit',
+      description,
+      timestamp: new Date().toISOString(),
+      reference: `TXN${Date.now()}`,
+      status: 'success',
+      category: category as any,
+      recipient
+    };
+
+    const newExpense: Expense = {
+      id: Math.random().toString(36).substr(2, 9),
+      amount,
+      category: category as any,
+      description,
+      timestamp: new Date().toISOString()
+    };
+
+    setBusinessProfile({
+      ...businessProfile,
+      wallet: {
+        ...businessProfile.wallet,
+        balance: businessProfile.wallet.balance - amount,
+        transactions: [newTransaction, ...businessProfile.wallet.transactions]
+      }
+    });
+
+    setExpenses(prev => [newExpense, ...prev]);
+    notify('Transfer Complete', `${businessProfile.currency} ${amount.toFixed(2)} sent to ${recipient}`, 'success');
   };
 
   const handleLogout = () => {
@@ -240,7 +305,9 @@ const App: React.FC = () => {
             currency={currency}
             onStatusChange={handleUpdateTransactionStatus}
             onAddExpense={(e) => setExpenses(prev => [{ ...e, id: Math.random().toString() }, ...prev])}
-            businessProfile={businessProfile}
+            businessProfile={businessProfile!}
+            onWalletCreate={handleWalletCreate}
+            onWalletTransfer={handleWalletTransfer}
           />
         )}
         {view === 'inventory' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}

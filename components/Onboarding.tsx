@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Shield, 
-  ChevronRight, 
+import {
+  Shield,
+  ChevronRight,
   ChevronLeft,
-  Smartphone, 
-  Zap, 
+  Smartphone,
+  Zap,
   Mail,
   Camera,
   Briefcase,
@@ -65,7 +65,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  
+
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Consent State
@@ -78,7 +78,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     email: '',
     phone: '',
     logo: '',
-    currency: 'USD',
+    currency: 'NGN',
     receiptFooter: 'Thank you for your business!',
     archetype: '',
     vipThreshold: 5,
@@ -112,7 +112,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const handleNext = () => {
     setAuthError('');
     if (step === 'auth_choice') return;
-    
+
     if (step === 'signup' || step === 'login') {
       if (authMode === 'login' && !password) {
         setAuthError('Please enter your password');
@@ -122,7 +122,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       setStep('otp');
       return;
     }
-    
+
     if (step === 'otp') {
       if (otpTimer === 0) {
         setAuthError('OTP expired. Please resend.');
@@ -132,7 +132,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         setAuthError('Incomplete OTP');
         return;
       }
-      
+
       if (authMode === 'signup') {
         setStep('consent');
       } else {
@@ -146,7 +146,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
       }
       return;
     }
-    
+
     if (step === 'consent') {
       setStep('platforms');
       return;
@@ -236,17 +236,17 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <h2 className="text-3xl font-black tracking-tight text-[#0F172A]">Scale your business via Chat.</h2>
         <p className="text-[#64748B] text-sm font-medium">Automate sales, inventory, and bookkeeping with Bookly AI.</p>
       </div>
-      
+
       <div className="flex flex-col gap-4">
-        <button 
+        <button
           onClick={() => { setAuthMode('signup'); setStep('signup'); setProfile(p => ({ ...p, phone: selectedCountry.code })); }}
           className="w-full h-16 bg-[#2DD4BF] text-[#0F172A] font-black rounded-3xl flex items-center justify-center space-x-3 hover:scale-[1.02] transition-all shadow-lg active:scale-[0.98]"
         >
           <Zap size={20} className="fill-current" />
           <span>Start Free</span>
         </button>
-        
-        <button 
+
+        <button
           onClick={() => { setAuthMode('login'); setStep('login'); }}
           className="w-full h-16 bg-white border border-[#0F172A]/10 text-[#0F172A] font-bold rounded-3xl flex items-center justify-center hover:bg-[#F0FDF4] hover:border-[#2DD4BF] transition-all shadow-sm"
         >
@@ -261,7 +261,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="h-[1px] flex-1 bg-[#0F172A]" />
         </div>
 
-        <button 
+        <button
           onClick={handleGoogleLogin}
           disabled={isGoogleLoading}
           className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl flex items-center justify-center space-x-3 hover:scale-[1.02] transition-all disabled:opacity-50"
@@ -291,8 +291,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Email Address</label>
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-            <input 
-              type="email" 
+            <input
+              type="email"
               className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl pl-12 pr-6 outline-none focus:border-[#2DD4BF] font-bold text-[#0F172A]"
               placeholder="Enter your email"
               value={profile.email}
@@ -304,7 +304,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div className="space-y-1">
           <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Phone Number</label>
           <div className="flex gap-2">
-            <select 
+            <select
               className="w-24 h-14 bg-white border border-[#0F172A]/10 rounded-2xl px-2 outline-none focus:border-[#2DD4BF] font-bold text-sm"
               value={selectedCountry.name}
               onChange={handleCountryChange}
@@ -313,8 +313,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             </select>
             <div className="relative flex-1">
               <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-              <input 
-                type="tel" 
+              <input
+                type="tel"
                 className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl pl-12 pr-6 outline-none focus:border-[#2DD4BF] font-bold text-[#0F172A]"
                 placeholder="000 000 0000"
                 value={profile.phone.replace(selectedCountry.code, '').trim()}
@@ -325,7 +325,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      <button 
+      <button
         disabled={!profile.email || profile.phone.length < 7}
         onClick={handleNext}
         className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl flex items-center justify-center space-x-2 disabled:opacity-20 transition-all active:scale-95 shadow-xl"
@@ -348,14 +348,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Email or Phone</label>
           <div className="relative">
             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl pl-12 pr-6 outline-none focus:border-[#2DD4BF] font-bold text-[#0F172A]"
               placeholder="e.g. +234... or name@mail.com"
               onChange={(e) => {
                 const val = e.target.value;
-                if (val.includes('@')) setProfile({...profile, email: val});
-                else setProfile({...profile, phone: val});
+                if (val.includes('@')) setProfile({ ...profile, email: val });
+                else setProfile({ ...profile, phone: val });
               }}
             />
           </div>
@@ -365,14 +365,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Password</label>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-            <input 
+            <input
               type={showPassword ? "text" : "password"}
               className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl pl-12 pr-12 outline-none focus:border-[#2DD4BF] font-bold text-[#0F172A]"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <button 
+            <button
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B]"
             >
@@ -384,7 +384,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
       {authError && <p className="text-red-500 text-xs font-bold text-center">{authError}</p>}
 
-      <button 
+      <button
         onClick={handleNext}
         className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl flex items-center justify-center space-x-2 shadow-xl active:scale-95 transition-all"
       >
@@ -402,7 +402,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
         <h2 className="text-2xl font-black text-[#0F172A]">Verification</h2>
         <p className="text-[#64748B] text-sm leading-relaxed px-4">
-          A code has been sent to 
+          A code has been sent to
           <span className="text-[#0F172A] block font-mono text-xs mt-1 font-bold">
             {profile.email || profile.phone}
           </span>
@@ -411,7 +411,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
       <div className="flex justify-center space-x-4">
         {otpValue.map((digit, i) => (
-          <input 
+          <input
             key={i}
             ref={(el) => (otpInputs.current[i] = el)}
             type="text"
@@ -431,7 +431,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </p>
         </div>
 
-        <button 
+        <button
           onClick={handleNext}
           disabled={otpValue.some(d => !d) || otpTimer === 0}
           className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl flex items-center justify-center disabled:opacity-20 transition-all shadow-xl"
@@ -449,7 +449,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <h2 className="text-2xl font-black text-[#0F172A]">Trust & Consent</h2>
         <p className="text-[#64748B] text-sm">Review how we process your business data.</p>
       </div>
-      
+
       <div className="space-y-4 text-left">
         <div className="p-4 bg-[#F8FAFC] border border-gray-100 rounded-[32px] space-y-4">
           <label className="flex items-start space-x-4 cursor-pointer group p-3 rounded-2xl hover:bg-white transition-all">
@@ -458,8 +458,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             </div>
             <input type="checkbox" className="hidden" checked={consentAI} onChange={(e) => setConsentAI(e.target.checked)} />
             <span className="text-[11px] text-[#64748B] group-hover:text-[#0F172A] leading-relaxed font-medium">
-              I consent to Bookly AI processing my texts/images to extract sales data as per the 
-              <button 
+              I consent to Bookly AI processing my texts/images to extract sales data as per the
+              <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setActiveLegalDoc('privacy'); }}
                 className="text-[#2DD4BF] font-black underline decoration-2 underline-offset-4 ml-1 hover:text-[#0F172A] transition-colors"
@@ -475,8 +475,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             </div>
             <input type="checkbox" className="hidden" checked={consentCustomer} onChange={(e) => setConsentCustomer(e.target.checked)} />
             <span className="text-[11px] text-[#64748B] group-hover:text-[#0F172A] leading-relaxed font-medium">
-              I confirm I have customer permission to log their order details according to the 
-              <button 
+              I confirm I have customer permission to log their order details according to the
+              <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setActiveLegalDoc('tos'); }}
                 className="text-[#2DD4BF] font-black underline decoration-2 underline-offset-4 ml-1 hover:text-[#0F172A] transition-colors"
@@ -488,14 +488,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
 
         <div className="px-4 text-[10px] text-[#64748B] font-medium italic text-center leading-relaxed">
-          By continuing, you agree to our 
-          <button onClick={() => setActiveLegalDoc('tos')} className="text-[#0F172A] font-bold mx-1">Terms</button> 
-          and acknowledge the 
+          By continuing, you agree to our
+          <button onClick={() => setActiveLegalDoc('tos')} className="text-[#0F172A] font-bold mx-1">Terms</button>
+          and acknowledge the
           <button onClick={() => setActiveLegalDoc('privacy')} className="text-[#0F172A] font-bold mx-1">Privacy Notice</button>.
         </div>
       </div>
 
-      <button 
+      <button
         disabled={!consentAI || !consentCustomer}
         onClick={handleNext}
         className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl flex items-center justify-center disabled:opacity-20 transition-all shadow-xl active:scale-[0.98]"
@@ -514,14 +514,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
       <div className="grid grid-cols-1 gap-3">
         {PLATFORMS.map((platform) => (
-          <button 
+          <button
             key={platform.id}
             onClick={() => togglePlatform(platform.id)}
-            className={`w-full h-16 px-6 rounded-3xl border flex items-center justify-between transition-all ${
-              profile.activePlatforms.includes(platform.id)
+            className={`w-full h-16 px-6 rounded-3xl border flex items-center justify-between transition-all ${profile.activePlatforms.includes(platform.id)
                 ? 'bg-[#2DD4BF]/10 border-[#2DD4BF] text-[#0F172A]'
                 : 'bg-white border-gray-100 text-[#64748B] hover:border-[#2DD4BF]/50'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-4">
               <div className={profile.activePlatforms.includes(platform.id) ? 'text-[#0F172A]' : 'text-gray-400'}>
@@ -534,7 +533,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         ))}
       </div>
 
-      <button 
+      <button
         disabled={profile.activePlatforms.length === 0}
         onClick={handleNext}
         className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl flex items-center justify-center disabled:opacity-20 transition-all shadow-xl"
@@ -553,7 +552,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
       <div className="space-y-6">
         <div className="flex flex-col items-center space-y-3">
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="w-28 h-28 bg-white border-2 border-dashed border-gray-200 rounded-[40px] flex flex-col items-center justify-center hover:border-[#2DD4BF] transition-all overflow-hidden shadow-sm"
           >
@@ -574,8 +573,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Business Name *</label>
             <div className="relative">
               <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl pl-12 pr-6 outline-none focus:border-[#2DD4BF] font-black text-[#0F172A]"
                 placeholder="Business Name"
                 value={profile.name}
@@ -587,7 +586,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Currency *</label>
-              <select 
+              <select
                 className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl px-4 outline-none focus:border-[#2DD4BF] font-black text-[#0F172A]"
                 value={profile.currency}
                 onChange={(e) => setProfile({ ...profile, currency: e.target.value })}
@@ -600,7 +599,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Archetype *</label>
-              <select 
+              <select
                 className="w-full h-14 bg-white border border-[#0F172A]/10 rounded-2xl px-4 outline-none focus:border-[#2DD4BF] font-black text-[#0F172A]"
                 value={profile.archetype}
                 onChange={(e) => setProfile({ ...profile, archetype: e.target.value })}
@@ -616,7 +615,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      <button 
+      <button
         disabled={!profile.name || !profile.archetype || !profile.currency}
         onClick={() => onComplete({
           ...profile,
@@ -646,8 +645,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
 
         <div className="cyber-border rounded-[48px] p-8 min-h-[500px] flex flex-col relative bg-white shadow-[0_50px_100px_-20px_rgba(15,23,42,0.1)]">
           {step !== 'auth_choice' && (
-            <button 
-              onClick={handleBack} 
+            <button
+              onClick={handleBack}
               className="absolute top-8 left-8 w-10 h-10 bg-[#F8FAFC] rounded-full flex items-center justify-center transition-all z-20 border border-gray-100 hover:bg-[#F0FDF4] hover:border-[#2DD4BF]"
             >
               <ArrowLeft size={18} className="text-[#64748B]" />
@@ -665,68 +664,68 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </div>
         </div>
       </div>
-      
+
       {activeLegalDoc !== 'none' && (
         <div className="fixed inset-0 z-[500] bg-[#0F172A]/40 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-300">
-           <div className="w-full max-w-md bg-white border border-gray-100 rounded-[40px] flex flex-col max-h-[85vh] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95">
-              <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-[#F8FAFC]">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#0F172A] text-[#2DD4BF] rounded-xl">
-                    <FileText size={20} />
-                  </div>
-                  <h3 className="text-xl font-black text-[#0F172A] tracking-tight">
-                    {activeLegalDoc === 'tos' ? 'Terms of Service' : 'Privacy Policy'}
-                  </h3>
+          <div className="w-full max-w-md bg-white border border-gray-100 rounded-[40px] flex flex-col max-h-[85vh] shadow-[0_60px_120px_-30px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-[#F8FAFC]">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#0F172A] text-[#2DD4BF] rounded-xl">
+                  <FileText size={20} />
                 </div>
-                <button onClick={() => setActiveLegalDoc('none')} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><X size={20} className="text-[#64748B]" /></button>
+                <h3 className="text-xl font-black text-[#0F172A] tracking-tight">
+                  {activeLegalDoc === 'tos' ? 'Terms of Service' : 'Privacy Policy'}
+                </h3>
               </div>
-              <div className="flex-1 overflow-y-auto p-8 text-sm text-[#64748B] space-y-6 font-sans font-medium leading-relaxed custom-scrollbar">
-                {activeLegalDoc === 'tos' ? (
-                  <div className="space-y-4">
-                    <p className="font-bold text-[#0F172A]">Welcome to Bookly AI.</p>
-                    <p>These terms govern your use of the Bookly mobile utility and AI extraction engine.</p>
-                    <div className="space-y-2">
-                      <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">1. Accuracy of Extraction</h4>
-                      <p>Bookly utilizes advanced AI to parse dialogue. Users are responsible for verifying extracted data before committing to the ledger.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">2. Compliance</h4>
-                      <p>Vendors must ensure they have necessary permissions from customers before logging data into the Bookly CRM.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">3. Usage Restrictions</h4>
-                      <p>Any misuse of the AI to process unauthorized or illegal data will result in immediate termination of access.</p>
-                    </div>
+              <button onClick={() => setActiveLegalDoc('none')} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><X size={20} className="text-[#64748B]" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-8 text-sm text-[#64748B] space-y-6 font-sans font-medium leading-relaxed custom-scrollbar">
+              {activeLegalDoc === 'tos' ? (
+                <div className="space-y-4">
+                  <p className="font-bold text-[#0F172A]">Welcome to Bookly AI.</p>
+                  <p>These terms govern your use of the Bookly mobile utility and AI extraction engine.</p>
+                  <div className="space-y-2">
+                    <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">1. Accuracy of Extraction</h4>
+                    <p>Bookly utilizes advanced AI to parse dialogue. Users are responsible for verifying extracted data before committing to the ledger.</p>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <p className="font-bold text-[#0F172A]">Your Privacy Matters.</p>
-                    <p>We take data security seriously. Here is how we handle your business information:</p>
-                    <div className="space-y-2">
-                      <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">1. Data Processing</h4>
-                      <p>Unstructured chat data is processed in real-time by the Gemini AI Engine to facilitate structured bookkeeping.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">2. Retention</h4>
-                      <p>Business logs and customer profiles are stored locally on your device or synced with your chosen project project based on your settings.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">3. Third-party Sharing</h4>
-                      <p>We do not sell your business data. AI processing is conducted securely through Google's GenAI SDK.</p>
-                    </div>
+                  <div className="space-y-2">
+                    <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">2. Compliance</h4>
+                    <p>Vendors must ensure they have necessary permissions from customers before logging data into the Bookly CRM.</p>
                   </div>
-                )}
-              </div>
-              <div className="p-8 border-t border-gray-100 bg-[#F8FAFC]">
-                <button 
-                  onClick={handleLegalAccept} 
-                  className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  <Check size={20} className="text-[#2DD4BF]" />
-                  <span>I Understand & Agree</span>
-                </button>
-              </div>
-           </div>
+                  <div className="space-y-2">
+                    <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">3. Usage Restrictions</h4>
+                    <p>Any misuse of the AI to process unauthorized or illegal data will result in immediate termination of access.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="font-bold text-[#0F172A]">Your Privacy Matters.</p>
+                  <p>We take data security seriously. Here is how we handle your business information:</p>
+                  <div className="space-y-2">
+                    <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">1. Data Processing</h4>
+                    <p>Unstructured chat data is processed in real-time by the Gemini AI Engine to facilitate structured bookkeeping.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">2. Retention</h4>
+                    <p>Business logs and customer profiles are stored locally on your device or synced with your chosen project project based on your settings.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-black text-[#0F172A] uppercase text-[10px] tracking-widest">3. Third-party Sharing</h4>
+                    <p>We do not sell your business data. AI processing is conducted securely through Google's GenAI SDK.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="p-8 border-t border-gray-100 bg-[#F8FAFC]">
+              <button
+                onClick={handleLegalAccept}
+                className="w-full h-16 bg-[#0F172A] text-white font-black rounded-3xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Check size={20} className="text-[#2DD4BF]" />
+                <span>I Understand & Agree</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

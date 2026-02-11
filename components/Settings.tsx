@@ -61,10 +61,20 @@ const Settings: React.FC<SettingsProps> = ({ businessProfile, setBusinessProfile
   };
 
   const handleSave = (updates: Partial<BusinessProfile>) => {
-    setBusinessProfile({
+    const updatedProfile = {
       ...businessProfile,
       ...updates
-    });
+    };
+
+    // If currency is being updated and wallet exists, update wallet currency too
+    if (updates.currency && businessProfile.wallet) {
+      updatedProfile.wallet = {
+        ...businessProfile.wallet,
+        currency: updates.currency
+      };
+    }
+
+    setBusinessProfile(updatedProfile);
     setActiveEdit('none');
   };
 

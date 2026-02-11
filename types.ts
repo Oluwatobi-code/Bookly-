@@ -96,7 +96,7 @@ export interface ExtractedSale {
   customers: ExtractedCustomerSale[];
   batchTotal?: number;
   confidence: 'high' | 'medium' | 'low';
-  
+
   // Flat fields for compatibility with UI components
   customerHandle?: string;
   items?: OrderItem[];
@@ -136,6 +136,38 @@ export interface DashboardWidgets {
   channels: boolean;
 }
 
+export interface WalletTransaction {
+  id: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  description: string;
+  timestamp: string;
+  reference: string;
+  status: 'success' | 'pending' | 'failed';
+  category?: ExpenseCategory; // For debits
+  source?: string; // For credits (e.g. "Customer Transfer")
+  recipient?: string; // For debits
+}
+
+export interface WalletProfile {
+  id: string;
+  enabled: boolean;
+  balance: number;
+  currency: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  kycStatus: 'pending' | 'verified' | 'failed';
+  kycData?: {
+    bvn?: string;
+    nin?: string;
+    dob?: string;
+    fullName?: string;
+  };
+  pinSet: boolean;
+  transactions: WalletTransaction[];
+}
+
 export interface BusinessProfile {
   name: string;
   email: string;
@@ -145,7 +177,7 @@ export interface BusinessProfile {
   receiptFooter: string;
   archetype: string;
   defaultSalesSource?: SalesSource;
-  vipThreshold: number; 
+  vipThreshold: number;
   stockThreshold: number;
   persistenceMode: 'cloud' | 'local';
   whatsappSyncEnabled: boolean;
@@ -153,6 +185,7 @@ export interface BusinessProfile {
   activePlatforms: SalesSource[];
   consentTimestamp?: string;
   dashboardWidgets: DashboardWidgets;
+  wallet?: WalletProfile; // Linked wallet
 }
 
 export type ExtractionResult = ExtractedSale | ExtractedProduct | ExtractedExpense;
