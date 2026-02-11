@@ -28,25 +28,23 @@ const LedgerView: React.FC<LedgerViewProps> = (props) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Merged Menu Toggle */}
-      <div className="flex p-1 bg-white border border-[#0F172A]/5 rounded-3xl w-full max-w-sm mx-auto shadow-sm">
+      <div className="flex p-1 bg-white border border-slate-200 rounded-3xl w-full max-w-sm mx-auto shadow-sm">
         <button
           onClick={() => setActiveTab('orders')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
-            activeTab === 'orders'
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'orders'
               ? 'bg-[#0F172A] text-white shadow-lg'
               : 'text-gray-400 hover:text-[#0F172A]'
-          }`}
+            }`}
         >
           <History size={16} />
           <span>Orders</span>
         </button>
         <button
           onClick={() => setActiveTab('expenses')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
-            activeTab === 'expenses'
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'expenses'
               ? 'bg-[#0F172A] text-white shadow-lg'
               : 'text-gray-400 hover:text-[#0F172A]'
-          }`}
+            }`}
         >
           <Wallet size={16} />
           <span>Expenses</span>

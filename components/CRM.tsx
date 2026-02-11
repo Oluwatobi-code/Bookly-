@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
 import { Customer, Transaction, BusinessProfile } from '../types';
-import { 
-  Users, 
-  Search, 
-  MessageCircle, 
-  Instagram, 
+import {
+  Users,
+  Search,
+  MessageCircle,
+  Instagram,
   Facebook,
   Phone,
   User,
@@ -48,8 +48,8 @@ const CRM: React.FC<CRMProps> = ({ customers, transactions, businessProfile, onO
     return { label: 'New', color: 'text-blue-500 bg-blue-500/10 border-blue-500/20', icon: <Zap size={10} /> };
   };
 
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredCustomers = customers.filter(c =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.handle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -110,16 +110,16 @@ const CRM: React.FC<CRMProps> = ({ customers, transactions, businessProfile, onO
             <p className="text-xs text-[#64748B] font-medium italic">Customer intelligence & history.</p>
           </div>
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={exportCRMToCSV}
-              className="w-12 h-12 bg-white border border-[#0F172A]/10 rounded-2xl flex items-center justify-center text-[#0F172A] shadow-sm active:scale-95 transition-all"
+              className="w-12 h-12 bg-white border border-slate-200 rounded-2xl flex items-center justify-center text-slate-600 hover:text-[#0F172A] hover:border-emerald-400 shadow-sm active:scale-95 transition-all"
               title="Export CSV"
             >
               <Download size={20} />
             </button>
-            <button 
+            <button
               onClick={onOpenAddCustomer}
-              className="h-12 px-5 bg-[#0F172A] text-white rounded-2xl flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all"
+              className="h-12 px-5 bg-[#2DD4BF] text-[#0F172A] rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all"
             >
               <Plus size={20} />
               <span className="hidden md:inline font-black uppercase text-xs tracking-widest">New Profile</span>
@@ -151,10 +151,10 @@ const CRM: React.FC<CRMProps> = ({ customers, transactions, businessProfile, onO
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Search handles or names..."
-          className="w-full h-14 pl-12 pr-4 bg-white border border-[#0F172A]/10 rounded-2xl focus:border-[#2DD4BF] outline-none font-medium text-sm"
+          className="w-full h-14 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl focus:border-[#2DD4BF] focus:ring-2 focus:ring-[#2DD4BF]/20 outline-none font-medium text-sm text-[#0F172A] placeholder:text-slate-400"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -180,8 +180,8 @@ const CRM: React.FC<CRMProps> = ({ customers, transactions, businessProfile, onO
                 filteredCustomers.map(customer => {
                   const tier = getTier(customer.orderCount);
                   return (
-                    <tr 
-                      key={customer.id} 
+                    <tr
+                      key={customer.id}
                       className="group hover:bg-[#F0FDF4] transition-colors cursor-pointer"
                       onClick={() => setSelectedCustomer(customer)}
                     >
@@ -243,14 +243,14 @@ const CRM: React.FC<CRMProps> = ({ customers, transactions, businessProfile, onO
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="w-24 h-24 rounded-[32px] bg-gray-50 border border-gray-100 flex items-center justify-center text-4xl font-black text-[#2DD4BF]">
-                   {selectedCustomer.name.charAt(0).toUpperCase()}
+                  {selectedCustomer.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
                   <h3 className="text-2xl font-black text-[#0F172A]">{selectedCustomer.name}</h3>
                   <div className="flex items-center justify-center gap-2 mt-1">
                     <span className="text-xs text-[#64748B] font-mono font-semibold">{selectedCustomer.handle}</span>
                     <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase ${getTier(selectedCustomer.orderCount).color}`}>
-                       {getTier(selectedCustomer.orderCount).label}
+                      {getTier(selectedCustomer.orderCount).label}
                     </div>
                   </div>
                 </div>
@@ -272,53 +272,53 @@ const CRM: React.FC<CRMProps> = ({ customers, transactions, businessProfile, onO
               </div>
 
               <div className="space-y-6">
-                 <div className="space-y-3">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Shipping Log</h4>
-                    <div className="bg-white border border-gray-100 p-5 rounded-3xl flex items-start gap-4 shadow-sm">
-                       <MapPin size={18} className="text-[#2DD4BF] mt-0.5" />
-                       <p className="text-sm text-[#64748B] leading-relaxed font-medium italic">{selectedCustomer.address || 'No primary address logged.'}</p>
-                    </div>
-                 </div>
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Shipping Log</h4>
+                  <div className="bg-white border border-gray-100 p-5 rounded-3xl flex items-start gap-4 shadow-sm">
+                    <MapPin size={18} className="text-[#2DD4BF] mt-0.5" />
+                    <p className="text-sm text-[#64748B] leading-relaxed font-medium italic">{selectedCustomer.address || 'No primary address logged.'}</p>
+                  </div>
+                </div>
 
-                 <div className="space-y-4">
-                    <div className="flex items-center justify-between px-1">
-                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Transaction Ledger</h4>
-                      <TrendingUp size={14} className="text-emerald-500" />
-                    </div>
-                    <div className="space-y-3">
-                       {customerTransactions.length === 0 ? (
-                         <div className="text-center py-10 text-gray-400 text-xs italic border border-dashed border-gray-200 rounded-3xl">No orders logged yet.</div>
-                       ) : (
-                         customerTransactions.map(t => (
-                           <div key={t.id} className="bg-white border border-gray-100 p-4 rounded-3xl flex items-center justify-between shadow-sm hover:border-[#2DD4BF]/30 transition-all group">
-                              <div className="flex items-center gap-4">
-                                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 border border-gray-100">
-                                    <Calendar size={18} />
-                                 </div>
-                                 <div>
-                                    <p className="text-sm font-black text-[#0F172A]">{t.productName}</p>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{new Date(t.timestamp).toLocaleDateString()}</p>
-                                 </div>
-                              </div>
-                              <div className="text-right flex flex-col items-end gap-1">
-                                 <p className="font-mono font-black text-[#2DD4BF] text-sm">{currency}{t.total.toLocaleString()}</p>
-                                 <button onClick={() => onViewInvoice(t)} className="text-[9px] font-black text-gray-400 uppercase hover:text-[#0F172A] transition-colors flex items-center gap-1">
-                                   Receipt <ChevronRight size={10} />
-                                 </button>
-                              </div>
-                           </div>
-                         ))
-                       )}
-                    </div>
-                 </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Transaction Ledger</h4>
+                    <TrendingUp size={14} className="text-emerald-500" />
+                  </div>
+                  <div className="space-y-3">
+                    {customerTransactions.length === 0 ? (
+                      <div className="text-center py-10 text-gray-400 text-xs italic border border-dashed border-gray-200 rounded-3xl">No orders logged yet.</div>
+                    ) : (
+                      customerTransactions.map(t => (
+                        <div key={t.id} className="bg-white border border-gray-100 p-4 rounded-3xl flex items-center justify-between shadow-sm hover:border-[#2DD4BF]/30 transition-all group">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 border border-gray-100">
+                              <Calendar size={18} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-black text-[#0F172A]">{t.productName}</p>
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{new Date(t.timestamp).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col items-end gap-1">
+                            <p className="font-mono font-black text-[#2DD4BF] text-sm">{currency}{t.total.toLocaleString()}</p>
+                            <button onClick={() => onViewInvoice(t)} className="text-[9px] font-black text-gray-400 uppercase hover:text-[#0F172A] transition-colors flex items-center gap-1">
+                              Receipt <ChevronRight size={10} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="p-6 md:p-8 border-t border-gray-100 bg-gray-50">
-               <button className="w-full h-14 bg-[#0F172A] text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-xl hover:opacity-90 active:scale-95 transition-all">
-                  <MessageCircle size={18} />
-                  <span>Initiate Chat via {selectedCustomer.channel}</span>
-               </button>
+              <button className="w-full h-14 bg-[#0F172A] text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-xl hover:opacity-90 active:scale-95 transition-all">
+                <MessageCircle size={18} />
+                <span>Initiate Chat via {selectedCustomer.channel}</span>
+              </button>
             </div>
           </div>
         </>

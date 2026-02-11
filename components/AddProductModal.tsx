@@ -36,9 +36,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const finalStock = hasVariants 
-      ? variants.reduce((sum, v) => sum + v.stock, 0) 
+
+    const finalStock = hasVariants
+      ? variants.reduce((sum, v) => sum + v.stock, 0)
       : formData.stock;
 
     onAdd({
@@ -57,27 +57,27 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#111] border border-white/10 rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-8 border-b border-white/5 bg-white/[0.02]">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-white border border-slate-100 rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-8 border-b border-slate-100 bg-slate-50/50">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Package className="text-blue-400" />
             New Product Entry
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <X size={20} className="text-gray-500" />
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <X size={20} className="text-slate-400" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Product Name</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
               value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
-              className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-bold"
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
+              className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-5 outline-none focus:border-[#2DD4BF] focus:ring-2 focus:ring-[#2DD4BF]/20 transition-all font-bold text-[#0F172A]"
               placeholder="e.g. Classic Silk Scarf"
             />
           </div>
@@ -87,24 +87,24 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
                 <DollarSign size={10} /> Sell Price
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 required
                 value={formData.price}
-                onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-mono font-bold text-emerald-400"
+                onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-5 outline-none focus:border-[#2DD4BF] transition-all font-mono font-bold text-emerald-600"
               />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
                 <TrendingDown size={10} /> Cost Price
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 required
                 value={formData.costPrice}
-                onChange={e => setFormData({...formData, costPrice: parseFloat(e.target.value) || 0})}
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-mono font-bold text-amber-500"
+                onChange={e => setFormData({ ...formData, costPrice: parseFloat(e.target.value) || 0 })}
+                className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-5 outline-none focus:border-[#2DD4BF] transition-all font-mono font-bold text-amber-600"
               />
             </div>
           </div>
@@ -112,10 +112,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Category</label>
-              <select 
+              <select
                 value={formData.category}
-                onChange={e => setFormData({...formData, category: e.target.value})}
-                className="w-full h-14 bg-[#111] border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-bold"
+                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-5 outline-none focus:border-[#2DD4BF] transition-all font-bold text-[#0F172A]"
               >
                 <option value="Fashion">Fashion</option>
                 <option value="Food">Food & Bev</option>
@@ -128,19 +128,19 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
                 <AlertCircle size={10} /> Stock Alert Threshold
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 required
                 value={formData.stockThreshold}
-                onChange={e => setFormData({...formData, stockThreshold: parseInt(e.target.value) || 0})}
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all font-bold text-amber-400"
+                onChange={e => setFormData({ ...formData, stockThreshold: parseInt(e.target.value) || 0 })}
+                className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-5 outline-none focus:border-[#2DD4BF] transition-all font-bold text-amber-600"
               />
             </div>
           </div>
 
           <div className="flex items-center justify-between py-2 px-1">
-            <span className="text-sm font-bold text-gray-300">Enable Product Variants?</span>
-            <button 
+            <span className="text-sm font-bold text-[#0F172A]">Enable Product Variants?</span>
+            <button
               type="button"
               onClick={() => setHasVariants(!hasVariants)}
               className={`w-12 h-6 rounded-full relative transition-colors ${hasVariants ? 'bg-blue-600' : 'bg-gray-700'}`}
@@ -154,35 +154,35 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
                 <Database size={10} /> Initial Stock
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 required
                 value={formData.stock}
-                onChange={e => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
-                className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-5 outline-none focus:border-white transition-all"
+                onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                className="w-full h-14 bg-white border border-slate-200 rounded-2xl px-5 outline-none focus:border-[#2DD4BF] transition-all font-bold text-[#0F172A]"
               />
             </div>
           ) : (
             <div className="space-y-4 p-5 bg-white/[0.02] border border-white/5 rounded-3xl animate-in slide-in-from-top-2">
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Variant Inventory</label>
-              
+
               <div className="flex gap-2">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="XL / Blue"
                   value={variantInput.name}
-                  onChange={e => setVariantInput({...variantInput, name: e.target.value})}
+                  onChange={e => setVariantInput({ ...variantInput, name: e.target.value })}
                   className="flex-1 h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-xs outline-none"
                 />
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   placeholder="Qty"
                   value={variantInput.stock}
-                  onChange={e => setVariantInput({...variantInput, stock: parseInt(e.target.value) || 0})}
+                  onChange={e => setVariantInput({ ...variantInput, stock: parseInt(e.target.value) || 0 })}
                   className="w-20 h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-xs outline-none"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={addVariant}
                   className="w-12 h-12 bg-white text-black rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
                 >
@@ -210,17 +210,17 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onAd
             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-1">
               <FileText size={10} /> Description
             </label>
-            <textarea 
+            <textarea
               value={formData.description}
-              onChange={e => setFormData({...formData, description: e.target.value})}
-              className="w-full h-24 p-5 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-white transition-all text-sm resize-none font-medium"
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
+              className="w-full h-24 p-5 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#2DD4BF] transition-all text-sm resize-none font-medium text-[#0F172A]"
               placeholder="Tell us about the item..."
             />
           </div>
 
-          <button 
+          <button
             type="submit"
-            className="w-full h-16 bg-white text-black font-black rounded-3xl flex items-center justify-center space-x-2 mt-2 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-white/5"
+            className="w-full h-16 bg-[#2DD4BF] text-[#0F172A] font-black rounded-3xl flex items-center justify-center space-x-2 mt-2 hover:shadow-lg hover:bg-[#20c9e6] active:scale-95 transition-all"
           >
             <Check size={20} />
             <span>Create Product</span>

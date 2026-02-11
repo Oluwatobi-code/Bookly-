@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { Transaction, FilterState, Product, Customer, SalesSource, TransactionStatus } from '../types';
-import { 
-  History, 
-  FileText, 
-  Trash2, 
-  TrendingUp, 
-  Package, 
+import {
+  History,
+  FileText,
+  Trash2,
+  TrendingUp,
+  Package,
   CreditCard,
   MessageCircle,
   Instagram,
@@ -43,13 +43,13 @@ interface SalesViewProps {
   onStatusChange: (id: string, status: TransactionStatus) => void;
 }
 
-const SalesView: React.FC<SalesViewProps> = ({ 
-  transactions, 
-  filters, 
-  setFilters, 
-  products, 
-  customers, 
-  vipThreshold, 
+const SalesView: React.FC<SalesViewProps> = ({
+  transactions,
+  filters,
+  setFilters,
+  products,
+  customers,
+  vipThreshold,
   onViewInvoice,
   onArchive,
   onEdit,
@@ -91,17 +91,16 @@ const SalesView: React.FC<SalesViewProps> = ({
           <p className="text-[#64748B] mt-1 font-medium italic">Audit confirmed sales & payment health.</p>
         </div>
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={exportPDF}
             className="h-11 px-5 rounded-2xl bg-[#0F172A] text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:opacity-90 shadow-xl transition-all"
           >
             <Printer size={16} /> Export PDF Report
           </button>
-          <button 
+          <button
             onClick={() => setShowArchived(!showArchived)}
-            className={`h-11 px-5 rounded-2xl flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-all border ${
-              showArchived ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-white/5 text-gray-400 border-white/10'
-            }`}
+            className={`h-11 px-5 rounded-2xl flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-all border ${showArchived ? 'bg-red-50 text-red-500 border-red-200' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'
+              }`}
           >
             {showArchived ? <Eye size={16} /> : <Archive size={16} />}
             <span>{showArchived ? 'Archived Records' : 'Archive Bin'}</span>
@@ -130,12 +129,12 @@ const SalesView: React.FC<SalesViewProps> = ({
       </div>
 
       <div className="bg-white/[0.02] border border-white/5 p-2 rounded-[32px] print:hidden">
-        <GlobalFilterBar 
-          filters={filters} 
-          setFilters={setFilters} 
-          products={products} 
-          customers={customers} 
-          vipThreshold={vipThreshold} 
+        <GlobalFilterBar
+          filters={filters}
+          setFilters={setFilters}
+          products={products}
+          customers={customers}
+          vipThreshold={vipThreshold}
         />
       </div>
 
@@ -169,16 +168,16 @@ const SalesView: React.FC<SalesViewProps> = ({
                     <tr key={t.id} className="group hover:bg-emerald-50/30 transition-colors">
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                           <button 
+                          <button
                             onClick={() => onStatusChange(t.id, isPaid ? 'confirmed' : 'paid')}
                             className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${isPaid ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' : 'border-gray-200 text-transparent'}`}
-                           >
+                          >
                             <Check size={14} />
-                           </button>
-                           <div>
-                              <p className="text-xs font-black text-[#0F172A]">{new Date(t.timestamp).toLocaleDateString()}</p>
-                              <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>{isPaid ? 'Payment Received' : 'Pending Receipt'}</p>
-                           </div>
+                          </button>
+                          <div>
+                            <p className="text-xs font-black text-[#0F172A]">{new Date(t.timestamp).toLocaleDateString()}</p>
+                            <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>{isPaid ? 'Payment Received' : 'Pending Receipt'}</p>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-5">

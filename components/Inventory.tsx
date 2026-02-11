@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { Product, BusinessProfile } from '../types';
-import { 
-  Search, 
-  Plus, 
+import {
+  Search,
+  Plus,
   AlertCircle,
   RefreshCw,
   Box,
@@ -24,8 +24,8 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
   const currency = businessProfile?.currency === 'NGN' ? '₦' : '$';
   const globalThreshold = businessProfile?.stockThreshold || 5;
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -38,7 +38,7 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
   }, [products]);
 
   const handleRestock = (id: string, amount: number) => {
-    setProducts(prev => prev.map(p => 
+    setProducts(prev => prev.map(p =>
       p.id === id ? { ...p, stock: p.stock + amount } : p
     ));
   };
@@ -51,9 +51,9 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
             <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[#0F172A]">Inventory</h1>
             <p className="text-xs text-[#64748B] font-medium italic">Asset valuation & stock control.</p>
           </div>
-          <button 
+          <button
             onClick={onOpenAddProduct}
-            className="w-12 h-12 md:w-auto md:px-6 bg-[#0F172A] text-white rounded-2xl flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all"
+            className="w-12 h-12 md:w-auto md:px-6 bg-[#2DD4BF] text-[#0F172A] rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all"
           >
             <Plus size={20} />
             <span className="hidden md:inline font-black uppercase text-xs tracking-widest">Add Item</span>
@@ -82,10 +82,10 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
       {/* Search - Full width on mobile */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Search products..."
-          className="w-full h-14 pl-12 pr-4 bg-white border border-[#0F172A]/10 rounded-2xl focus:border-[#2DD4BF] outline-none font-medium text-sm"
+          className="w-full h-14 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl focus:border-[#2DD4BF] focus:ring-2 focus:ring-[#2DD4BF]/20 outline-none font-medium text-sm text-[#0F172A] placeholder:text-slate-400"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -99,13 +99,12 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
           const isOut = product.stock === 0;
 
           return (
-            <div 
-              key={product.id} 
-              className={`group relative border rounded-[32px] p-5 flex flex-col transition-all duration-300 ${
-                isOut ? 'bg-gray-50 border-gray-200 opacity-80' : 
-                isLow ? 'bg-amber-50/50 border-amber-200' : 
-                'bg-white border-gray-100 hover:border-[#2DD4BF]/30 hover:shadow-lg'
-              }`}
+            <div
+              key={product.id}
+              className={`group relative border rounded-[32px] p-5 flex flex-col transition-all duration-300 ${isOut ? 'bg-gray-50 border-gray-200 opacity-80' :
+                  isLow ? 'bg-amber-50/50 border-amber-200' :
+                    'bg-white border-gray-100 hover:border-[#2DD4BF]/30 hover:shadow-lg'
+                }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className={`p-2.5 rounded-xl ${isLow ? 'bg-amber-100 text-amber-600' : 'bg-[#F0FDF4] text-[#2DD4BF]'}`}>
@@ -143,13 +142,13 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
                 </div>
 
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleRestock(product.id, 5)}
                     className="flex-1 h-11 bg-[#0F172A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                   >
                     <RefreshCw size={12} /> +5
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleRestock(product.id, 10)}
                     className="flex-1 h-11 bg-white border border-[#0F172A]/10 text-[#0F172A] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 active:scale-95 transition-all"
                   >
@@ -162,7 +161,7 @@ const Inventory: React.FC<InventoryProps> = ({ products, setProducts, onOpenAddP
                 <div className="absolute inset-0 z-10 bg-white/40 backdrop-blur-[1px] rounded-[32px] flex items-center justify-center p-4">
                   <div className="bg-white p-4 rounded-2xl shadow-xl border border-red-100 text-center animate-in zoom-in-95">
                     <p className="text-xs font-black text-red-600 uppercase mb-2">Out of Stock</p>
-                    <button 
+                    <button
                       onClick={() => handleRestock(product.id, 10)}
                       className="px-4 py-2 bg-[#0F172A] text-white text-[10px] font-black uppercase tracking-widest rounded-lg"
                     >
