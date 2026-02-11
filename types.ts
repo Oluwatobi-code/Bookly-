@@ -90,11 +90,17 @@ export interface ExtractedCustomerSale {
   address?: string;
 }
 
+export type ExtractedRecordType = 'order' | 'expense';
+
 export interface ExtractedSale {
   intent: 'sale';
-  orderType: 'single' | 'batch';
-  customers: ExtractedCustomerSale[];
-  batchTotal?: number;
+  recordType: ExtractedRecordType;
+  customerName: string;
+  orderItems: OrderItem[];
+  total: number;
+  paymentMethod?: string;
+  deliveryFee?: number;
+  platform?: SalesSource;
   confidence: 'high' | 'medium' | 'low';
 
   // Flat fields for compatibility with UI components
@@ -120,10 +126,13 @@ export interface ExtractedProduct {
 
 export interface ExtractedExpense {
   intent: 'expense';
+  recordType: ExtractedRecordType;
   amount: number;
   category: ExpenseCategory;
   description: string;
   date?: string;
+  paymentMethod?: string;
+  vendor?: string;
   confidence: 'high' | 'medium' | 'low';
 }
 

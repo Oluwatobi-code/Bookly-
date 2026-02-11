@@ -39,6 +39,11 @@ INTENT CATEGORIES:
 3. "product": New inventory items.
 4. "inquiry": Customer asking for info (delivery cost, account details, availability).
 
+RECORD TYPE CLASSIFICATION:
+- For "sale" intent: set "recordType" to "order"
+- For "expense" intent: set "recordType" to "expense"
+- For other intents: recordType is optional
+
 INSTRUCTIONS:
 - Match products to this list: ${inventoryList}.
 - If "inquiry" is detected, provide "suggestedActions" (e.g., "Send Account Details", "Calculate Shipping").
@@ -67,6 +72,7 @@ INSTRUCTIONS:
           type: Type.OBJECT,
           properties: {
             intent: { type: Type.STRING, enum: ['sale', 'product', 'expense', 'inquiry'] },
+            recordType: { type: Type.STRING, enum: ['order', 'expense'] },
             confidence: { type: Type.STRING, enum: ['high', 'medium', 'low'] },
             suggestedActions: { type: Type.ARRAY, items: { type: Type.STRING } },
             orderType: { type: Type.STRING, enum: ['single', 'batch'] },
@@ -101,7 +107,9 @@ INSTRUCTIONS:
             stock: { type: Type.INTEGER },
             category: { type: Type.STRING },
             amount: { type: Type.NUMBER },
-            description: { type: Type.STRING }
+            description: { type: Type.STRING },
+            vendor: { type: Type.STRING },
+            paymentMethod: { type: Type.STRING }
           },
           required: ["intent", "confidence"]
         }

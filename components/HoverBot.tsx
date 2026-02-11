@@ -2,12 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, ExtractionResult, ExtractedSale, ExtractedProduct, BusinessProfile, Customer, ExtractedExpense } from '../types';
 import { analyzeIntentAndExtract } from '../services/geminiService';
-import { 
-  X, Sparkles, Check, Mic, MicOff, Send, Zap, 
+import {
+  X, Sparkles, Check, Mic, MicOff, Send, Zap,
   Camera, RefreshCw, Minus, Maximize2, ChevronDown,
   ShoppingCart, Wallet, Package, Scan, AlertCircle,
   Minimize2, ExternalLink, HelpCircle, ArrowRight
 } from 'lucide-react';
+import { ReviewConfirmModal } from './ReviewConfirmModal';
+import { InvoiceGenerator } from './InvoiceGenerator';
 
 interface HoverBotProps {
   inventory: Product[];
@@ -29,21 +31,25 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
   const [extractedData, setExtractedData] = useState<ExtractionResult | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [pendingReview, setPendingReview] = useState<ExtractedSale | ExtractedExpense | null>(null);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [lastTransaction, setLastTransaction] = useState<any>(null);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleAnalyze = async (imageBase64?: string) => {
     if (!currentText.trim() && !imageBase64) return;
-    
+
     setError(null);
     setStep('analyzing');
     setUiMode('maxi');
-    
+
     try {
       const inputs = imageBase64 ? [{ imageBase64 }] : [{ text: currentText }];
       const data = await analyzeIntentAndExtract(inputs, inventory);
-      
+
       if (data && data.intent) {
         setExtractedData(data);
         setStep('verification');
@@ -92,17 +98,43 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
 
   const handleCommit = () => {
     if (!extractedData) return;
-    
-    if (extractedData.intent === 'sale') {
-      onConfirmSale(extractedData as ExtractedSale);
-      setIsActive(false); // Close bot immediately to show confirmation modal
+
+    // For sales and expenses, show review modal
+    if (extractedData.intent === 'sale' || extractedData.intent === 'expense') {
+      setPendingReview(extractedData as ExtractedSale | ExtractedExpense);
+      setShowReviewModal(true);
+      setIsActive(false); // Close bot to show review modal
     } else if (extractedData.intent === 'product') {
+      // Products don't need review, save directly
       onConfirmProduct(extractedData as ExtractedProduct);
       showSuccess();
-    } else if (extractedData.intent === 'expense') {
-      onConfirmExpense(extractedData as ExtractedExpense);
+    }
+  };
+
+  const handleReviewConfirm = (confirmedRecord: ExtractedSale | ExtractedExpense) => {
+    setShowReviewModal(false);
+
+    if (confirmedRecord.recordType === 'order') {
+      const saleData = confirmedRecord as ExtractedSale;
+      onConfirmSale(saleData);
+
+      // Show invoice for orders
+      // Note: We need to convert ExtractedSale to Transaction format
+      // This will be handled by the parent component
+      showSuccess();
+    } else if (confirmedRecord.recordType === 'expense') {
+      onConfirmExpense(confirmedRecord as ExtractedExpense);
       showSuccess();
     }
+
+    setPendingReview(null);
+  };
+
+  const handleReviewCancel = () => {
+    setShowReviewModal(false);
+    setPendingReview(null);
+    setIsActive(true); // Reopen bot
+    reset();
   };
 
   const showSuccess = () => {
@@ -128,15 +160,15 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
 
   return (
     <div className={`fixed z-[400] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-      ${uiMode === 'minimized' 
-        ? 'bottom-20 right-8 w-16 h-16' 
+      ${uiMode === 'minimized'
+        ? 'bottom-20 right-8 w-16 h-16'
         : uiMode === 'compact'
-          ? 'bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-xl h-16' 
+          ? 'bottom-20 left-1/2 -translate-x-1/2 w-[90%] max-w-xl h-16'
           : 'bottom-20 right-6 left-6 md:left-auto md:w-[450px] h-[80vh]'}
     `}>
-      
+
       {uiMode === 'minimized' ? (
-        <button 
+        <button
           onClick={() => setUiMode('compact')}
           className="w-16 h-16 bg-[#0F172A] border-2 border-[#2DD4BF] rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(45,212,191,0.4)] text-[#2DD4BF] hover:scale-110 active:scale-95 transition-all"
         >
@@ -146,7 +178,7 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
         <div className={`w-full bg-[#0F172A] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.7)] flex flex-col transition-all duration-500
           ${uiMode === 'compact' ? 'rounded-[24px]' : 'rounded-[40px]'} h-full overflow-hidden
         `}>
-          
+
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02] shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-[#2DD4BF] rounded-xl flex items-center justify-center">
@@ -177,7 +209,7 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
               </div>
             ) : step === 'idle' ? (
               <div className="h-full flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
-                <textarea 
+                <textarea
                   autoFocus
                   className="flex-1 w-full p-6 bg-white/[0.03] border border-white/10 rounded-[32px] outline-none text-sm placeholder:text-slate-600 resize-none text-white font-medium focus:border-[#2DD4BF]/50 transition-all shadow-inner"
                   placeholder="Paste customer chat text here. AI will extract items, quantities, and totals instantly."
@@ -197,8 +229,8 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
             ) : step === 'analyzing' ? (
               <div className="h-full flex flex-col items-center justify-center space-y-6">
                 <div className="relative">
-                   <RefreshCw size={56} className="text-[#2DD4BF] animate-spin" />
-                   <Sparkles size={24} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  <RefreshCw size={56} className="text-[#2DD4BF] animate-spin" />
+                  <Sparkles size={24} className="text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                 </div>
                 <div className="text-center space-y-2">
                   <p className="font-black text-white uppercase tracking-[0.3em] text-sm">Processing Intelligence</p>
@@ -236,8 +268,8 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
                   {extractedData.intent === 'sale' && (extractedData as ExtractedSale).customers?.map((cust, i) => (
                     <div key={i} className="space-y-4">
                       <div className="flex items-center justify-between">
-                         <p className="text-xs font-black text-[#2DD4BF]">{cust.handle || 'Unidentified Guest'}</p>
-                         <p className="text-[10px] font-black text-slate-500 uppercase">{cust.platform || 'General'}</p>
+                        <p className="text-xs font-black text-[#2DD4BF]">{cust.handle || 'Unidentified Guest'}</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase">{cust.platform || 'General'}</p>
                       </div>
                       <div className="space-y-2">
                         {cust.items?.map((item, j) => (
@@ -284,6 +316,18 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
             ) : null}
           </div>
         </div>
+      )}
+
+      {/* Review & Confirm Modal */}
+      {showReviewModal && pendingReview && businessProfile && (
+        <ReviewConfirmModal
+          extractedRecord={pendingReview}
+          onConfirm={handleReviewConfirm}
+          onCancel={handleReviewCancel}
+          businessProfile={businessProfile}
+          products={inventory}
+          customers={[]}
+        />
       )}
     </div>
   );
