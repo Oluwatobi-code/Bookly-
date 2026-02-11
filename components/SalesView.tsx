@@ -57,6 +57,7 @@ const SalesView: React.FC<SalesViewProps> = ({
   onStatusChange
 }) => {
   const [showArchived, setShowArchived] = useState(false);
+   const [showLogOrder, setShowLogOrder] = useState(false);
 
   const displayedTransactions = transactions.filter(t => t.isArchived === showArchived);
 
@@ -98,6 +99,12 @@ const SalesView: React.FC<SalesViewProps> = ({
             <Printer size={16} /> Export PDF Report
           </button>
           <button
+            onClick={() => setShowLogOrder(true)}
+            className="h-11 px-5 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 shadow-xl transition-all"
+          >
+            + Add Order
+          </button>
+          <button
             onClick={() => setShowArchived(!showArchived)}
             className={`h-11 px-5 rounded-2xl flex items-center gap-2 font-black text-xs uppercase tracking-widest transition-all border ${showArchived ? 'bg-red-50 text-red-500 border-red-200' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'
               }`}
@@ -109,6 +116,39 @@ const SalesView: React.FC<SalesViewProps> = ({
       </header>
 
       {/* Summary Cards */}
+            {/* Log Order Modal */}
+            <LogOrderModal
+              open={showLogOrder}
+              onClose={() => setShowLogOrder(false)}
+              products={products}
+              customers={customers}
+              onSubmit={order => {
+                if (typeof onAddOrder === 'function') {
+                  onAddOrder(order);
+                }
+              }}
+            />
+  onAddOrder?: (order: any) => void;
+}
+
+const SalesView: React.FC<SalesViewProps> = ({
+  transactions,
+  filters,
+  setFilters,
+  products,
+  customers,
+  vipThreshold,
+  onViewInvoice,
+  onArchive,
+  onEdit,
+  currency,
+  onStatusChange,
+  onAddOrder
+}) => {
+
+            {/* Summary Cards */}
+      import GlobalFilterBar from './GlobalFilterBar';
+      import LogOrderModal from './LogOrderModal';
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="cyber-border p-6 rounded-[32px] space-y-1 bg-white">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Filtered Volume</p>

@@ -279,19 +279,47 @@ const App: React.FC = () => {
               {note.type === 'success' ? <Check size={20} /> : <Bell size={20} />}
             </div>
             <div>
-              <p className="text-xs font-black text-white">{note.title}</p>
-              <p className="text-[10px] text-slate-400">{note.message}</p>
-            </div>
-            <button onClick={() => setNotifications(prev => prev.filter(n => n.id !== note.id))} className="ml-auto p-1 text-slate-600 hover:text-white"><X size={14} /></button>
-          </div>
-        ))}
-      </div>
-
-      <nav className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-20 bg-[#0F172A] border-r border-white/5 py-8 items-center space-y-6 z-[100] nav-glass">
-        <div className="w-12 h-12 bg-[#2DD4BF] flex items-center justify-center rounded-2xl mb-8 transform -rotate-3 cursor-pointer" onClick={() => setView('dashboard')}>
-          <span className="text-[#0F172A] font-black text-xl">B</span>
-        </div>
-        <NavItem active={view === 'dashboard'} icon={<LayoutDashboard size={24} />} onClick={() => setView('dashboard')} label="Home" />
+              <SalesView
+                transactions={transactions}
+                filters={filters}
+                setFilters={setFilters}
+                products={products}
+                customers={customers}
+                vipThreshold={businessProfile?.vipThreshold || 5}
+                onViewInvoice={setViewingTransaction}
+                onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))}
+                onEdit={setEditingTransaction}
+                currency={currency}
+                onStatusChange={handleUpdateTransactionStatus}
+                onAddOrder={order => {
+                  const id = 'order_' + Math.random().toString(36).substr(2, 9);
+                  const now = new Date().toISOString();
+                  const transaction = {
+                    id,
+                    customerId: '',
+                    customerHandle: order.customerName || '',
+                    productId: '',
+                    productName: order.product,
+                    quantity: order.quantity,
+                    total: order.total,
+                    costTotal: 0,
+                    deliveryFee: 0,
+                    timestamp: now,
+                    status: order.isPaid ? 'paid' : 'unpaid',
+                    source: 'Other',
+                    paymentMethod: order.isPaid ? 'Cash/Transfer' : 'Bookly Wallet',
+                    editHistory: [],
+                    items: [{ productName: order.product, quantity: order.quantity, unitPrice: order.unitPrice }],
+                  };
+                  setTransactions(prev => [transaction, ...prev]);
+                  // Auto-generate document
+                  if (order.isPaid) {
+                    setViewingTransaction(transaction); // Receipt
+                  } else {
+                    setViewingTransaction(transaction); // Invoice
+                  }
+                }}
+              />
         <NavItem active={view === 'finance'} icon={<TrendingUp size={24} />} onClick={() => setView('finance')} label="Finance" />
         <NavItem active={view === 'assets'} icon={<ShoppingBag size={24} />} onClick={() => setView('assets')} label="Assets" />
         <NavItem active={view === 'orders'} icon={<Package size={24} />} onClick={() => setView('orders')} label="Orders" />
@@ -395,6 +423,38 @@ const App: React.FC = () => {
             currency={currency}
             onStatusChange={handleUpdateTransactionStatus}
           />
+          {/* Attach global handler for LogOrderModal submission */}
+          <script dangerouslySetInnerHTML={{
+            __html: `
+              window.handleAddOrder = function(order) {
+                const id = 'order_' + Math.random().toString(36).substr(2, 9);
+                const now = new Date().toISOString();
+                const transaction = {
+                  id,
+                  customerId: '',
+                  customerHandle: order.customerName || '',
+                  productId: '',
+                  productName: order.product,
+                  quantity: order.quantity,
+                  total: order.total,
+                  costTotal: 0,
+                  deliveryFee: 0,
+                  timestamp: now,
+                  status: order.isPaid ? 'paid' : 'unpaid',
+                  source: 'Other',
+                  paymentMethod: order.isPaid ? 'Cash/Transfer' : 'Bookly Wallet',
+                  editHistory: [],
+                  items: [{ productName: order.product, quantity: order.quantity, unitPrice: order.unitPrice }],
+                };
+                window.dispatchEvent(new CustomEvent('addOrder', { detail: transaction }));
+              };
+              window.addEventListener('addOrder', function(e) {
+                if (window.__setTransactions) {
+                  window.__setTransactions(e.detail);
+                }
+              });
+            `
+          }} />
         )}
         {view === 'crm' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
         {view === 'inventory' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}
