@@ -378,48 +378,50 @@ const App: React.FC = () => {
       <main className="flex-1 px-6 md:px-8 md:pl-28 lg:pl-32 max-w-[1440px] mx-auto w-full pt-16 md:pt-16 pb-32 md:pb-8 min-h-screen">
         {view === 'dashboard' && <Dashboard products={products} customers={customers} transactions={filteredTransactions.filter(t => !t.isArchived)} expenses={expenses} onNavigate={setView} businessProfile={businessProfile} onOpenManualSale={() => setIsManualSaleModalOpen(true)} />}
         {view === 'finance' && (
-          <LedgerView
-            <SalesView
-              transactions={transactions}
-              filters={filters}
-              setFilters={setFilters}
-              products={products}
-              customers={customers}
-              vipThreshold={businessProfile?.vipThreshold || 5}
-              onViewInvoice={setViewingTransaction}
-              onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))}
-              onEdit={setEditingTransaction}
-              currency={currency}
-              onStatusChange={handleUpdateTransactionStatus}
-              onAddOrder={order => {
-                const id = 'order_' + Math.random().toString(36).substr(2, 9);
-                const now = new Date().toISOString();
-                const transaction = {
-                  id,
-                  customerId: '',
-                  customerHandle: order.customerName || '',
-                  productId: '',
-                  productName: order.product,
-                  quantity: order.quantity,
-                  total: order.total,
-                  costTotal: 0,
-                  deliveryFee: 0,
-                  timestamp: now,
-                  status: order.isPaid ? 'paid' : 'unpaid',
-                  source: 'Other',
-                  paymentMethod: order.isPaid ? 'Cash/Transfer' : 'Bookly Wallet',
-                  editHistory: [],
-                  items: [{ productName: order.product, quantity: order.quantity, unitPrice: order.unitPrice }],
-                };
-                setTransactions(prev => [transaction, ...prev]);
-                // Auto-generate document
-                if (order.isPaid) {
-                  setViewingTransaction(transaction); // Receipt
-                } else {
-                  setViewingTransaction(transaction); // Invoice
-                }
-              }}
-            />
+          <LedgerView />
+        )}
+        {view === 'orders' && (
+          <SalesView
+            transactions={transactions}
+            filters={filters}
+            setFilters={setFilters}
+            products={products}
+            customers={customers}
+            vipThreshold={businessProfile?.vipThreshold || 5}
+            onViewInvoice={setViewingTransaction}
+            onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))}
+            onEdit={setEditingTransaction}
+            currency={currency}
+            onStatusChange={handleUpdateTransactionStatus}
+            onAddOrder={order => {
+              const id = 'order_' + Math.random().toString(36).substr(2, 9);
+              const now = new Date().toISOString();
+              const transaction = {
+                id,
+                customerId: '',
+                customerHandle: order.customerName || '',
+                productId: '',
+                productName: order.product,
+                quantity: order.quantity,
+                total: order.total,
+                costTotal: 0,
+                deliveryFee: 0,
+                timestamp: now,
+                status: order.isPaid ? 'paid' : 'unpaid',
+                source: 'Other',
+                paymentMethod: order.isPaid ? 'Cash/Transfer' : 'Bookly Wallet',
+                editHistory: [],
+                items: [{ productName: order.product, quantity: order.quantity, unitPrice: order.unitPrice }],
+              };
+              setTransactions(prev => [transaction, ...prev]);
+              // Auto-generate document
+              if (order.isPaid) {
+                setViewingTransaction(transaction); // Receipt
+              } else {
+                setViewingTransaction(transaction); // Invoice
+              }
+            }}
+          />
               });
             `
           }} />
