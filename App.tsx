@@ -29,6 +29,7 @@ import HoverBot from './components/HoverBot';
 import Expenses from './components/Expenses';
 import SalesView from './components/SalesView';
 import LedgerView from './components/LedgerView';
+import AssetsView from './components/AssetsView';
 import AddProductModal from './components/AddProductModal';
 import AddCustomerModal from './components/AddCustomerModal';
 import InvoiceModal from './components/InvoiceModal';
@@ -368,7 +369,18 @@ const App: React.FC = () => {
             onWalletTransfer={handleWalletTransfer}
           />
         )}
-        {view === 'assets' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}
+        {view === 'assets' && (
+          <AssetsView
+            products={products}
+            customers={customers}
+            transactions={transactions}
+            onOpenAddProduct={() => setIsAddProductModalOpen(true)}
+            onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)}
+            setProducts={handleUpdateStock}
+            businessProfile={businessProfile}
+            onViewInvoice={setViewingTransaction}
+          />
+        )}
         {view === 'orders' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
         {view === 'crm' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
         {view === 'inventory' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}
