@@ -56,16 +56,8 @@ const App: React.FC = () => {
     customerHandles: [], platforms: [], status: [], dateRange: { start: '', end: '' }, months: [], productNames: [], tiers: []
   });
 
-  const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Vintage Denim Jacket', price: 45, costPrice: 20, stock: 12, totalSales: 5, category: 'Fashion' },
-    { id: '2', name: 'Ceramic Coffee Mug', price: 15, costPrice: 4, stock: 45, totalSales: 2, category: 'Home' },
-    { id: '3', name: 'Wireless Headphones', price: 89, costPrice: 40, stock: 8, totalSales: 15, category: 'Electronics' },
-  ]);
-
-  const [customers, setCustomers] = useState<Customer[]>([
-    { id: 'c1', handle: '@unwana', name: 'Unwana M.', orderCount: 3, ltv: 135, channel: 'WhatsApp', lastActive: '2 hours ago' },
-    { id: 'c2', handle: '@jess_c', name: 'Jessica Chen', orderCount: 1, ltv: 15, channel: 'Instagram', lastActive: '1 day ago' },
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -355,7 +347,36 @@ const App: React.FC = () => {
       <main className="flex-1 px-6 md:px-8 md:pl-28 lg:pl-32 max-w-[1440px] mx-auto w-full pt-16 md:pt-16 pb-32 md:pb-8 min-h-screen">
         {view === 'dashboard' && <Dashboard products={products} customers={customers} transactions={filteredTransactions.filter(t => !t.isArchived)} expenses={expenses} onNavigate={setView} businessProfile={businessProfile} onOpenManualSale={() => setIsManualSaleModalOpen(true)} />}
         {view === 'finance' && (
-          <LedgerView />
+          <LedgerView
+            transactions={transactions}
+            expenses={expenses}
+            filters={filters}
+            setFilters={setFilters}
+            products={products}
+            customers={customers}
+            vipThreshold={businessProfile?.vipThreshold || 5}
+            onViewInvoice={setViewingTransaction}
+            onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))}
+            onEdit={setEditingTransaction}
+            currency={currency}
+            onStatusChange={handleUpdateTransactionStatus}
+            onAddExpense={(e) => setExpenses(prev => [{ ...e, id: Math.random().toString(36).substr(2, 9), timestamp: new Date().toISOString() }, ...prev])}
+            businessProfile={businessProfile!}
+            onWalletCreate={handleWalletCreate}
+            onWalletTransfer={handleWalletTransfer}
+          />
+        )}
+        {view === 'assets' && (
+          <AssetsView
+            products={products}
+            customers={customers}
+            transactions={transactions}
+            onOpenAddProduct={() => setIsAddProductModalOpen(true)}
+            onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)}
+            setProducts={handleUpdateStock}
+            businessProfile={businessProfile}
+            onViewInvoice={setViewingTransaction}
+          />
         )}
         {view === 'orders' && (
           <SalesView
@@ -393,6 +414,12 @@ const App: React.FC = () => {
                 fee: 0
               };
               setTransactions(prev => [transaction, ...prev]);
+
+              // Sync product stock and sales
+              setProducts(prev => prev.map(p =>
+                p.name === order.product ? { ...p, stock: Math.max(0, p.stock - order.quantity), totalSales: p.totalSales + order.quantity } : p
+              ));
+
               // Auto-generate document
               if (order.isPaid) {
                 setViewingTransaction(transaction); // Receipt
