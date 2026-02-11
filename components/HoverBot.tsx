@@ -1,12 +1,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, ExtractionResult, ExtractedSale, ExtractedProduct, BusinessProfile, Customer, ExtractedExpense } from '../types';
-import { analyzeIntentAndExtract } from '../services/geminiService';
+import { smartAnalyzeAndExtract } from '../services/geminiService';
+import { getQuotaStats, isQuotaLow, isQuotaExhausted, formatQuotaStats } from '../services/quotaManager';
+import { getCacheStats } from '../services/extractionCache';
 import {
   X, Sparkles, Check, Mic, MicOff, Send, Zap,
   Camera, RefreshCw, Minus, Maximize2, ChevronDown,
   ShoppingCart, Wallet, Package, Scan, AlertCircle,
-  Minimize2, ExternalLink, HelpCircle, ArrowRight
+  Minimize2, ExternalLink, HelpCircle, ArrowRight, Wifi
 } from 'lucide-react';
 import { ReviewConfirmModal } from './ReviewConfirmModal';
 import { InvoiceGenerator } from './InvoiceGenerator';
@@ -23,6 +25,7 @@ interface HoverBotProps {
 }
 
 type UIMode = 'minimized' | 'compact' | 'maxi';
+type DataSource = 'api' | 'cache' | 'fallback' | 'none';
 
 const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirmProduct, onConfirmExpense, isActive, setIsActive, businessProfile }) => {
   const [uiMode, setUiMode] = useState<UIMode>('compact');
@@ -35,6 +38,8 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
   const [pendingReview, setPendingReview] = useState<ExtractedSale | ExtractedExpense | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
   const [lastTransaction, setLastTransaction] = useState<any>(null);
+  const [dataSource, setDataSource] = useState<DataSource>('none');
+  const [showQuotaInfo, setShowQuotaInfo] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -48,17 +53,29 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
 
     try {
       const inputs = imageBase64 ? [{ imageBase64 }] : [{ text: currentText }];
-      const data = await analyzeIntentAndExtract(inputs, inventory);
+      const { result, source, error: extractionError } = await smartAnalyzeAndExtract(inputs, inventory, {
+        useRetry: true,
+        useCache: true,
+        useFallback: true,
+        maxRetries: 2
+      });
 
-      if (data && data.intent) {
-        setExtractedData(data);
+      setDataSource(source);
+
+      if (result && result.intent) {
+        // Show warning if not from API
+        if (source !== 'api') {
+          setError(`Using ${source === 'cache' ? 'cached' : source === 'fallback' ? 'basic parsing' : 'manual'} mode`);
+        }
+        setExtractedData(result);
         setStep('verification');
       } else {
-        setError("AI couldn't parse the intent. Try more details.");
+        setError(extractionError || "Unable to extract data. Please enter manually.");
         setStep('idle');
       }
     } catch (e) {
-      setError("Sync failed. Check connection.");
+      console.error('Analysis error:', e);
+      setError("Error occurred. Please try again.");
       setStep('idle');
     }
   };
@@ -188,6 +205,13 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
                 <h3 className="text-xs font-black uppercase tracking-widest text-white">Bookly AI</h3>
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowQuotaInfo(!showQuotaInfo)}
+                  className="p-2 text-slate-400 hover:text-white transition-colors relative"
+                  title="API Quota Status"
+                >
+                  <Wifi size={16} className={isQuotaExhausted() ? 'text-red-400' : isQuotaLow() ? 'text-yellow-400' : 'text-green-400'} />
+                </button>
                 {uiMode === 'compact' ? (
                   <button onClick={() => setUiMode('maxi')} className="p-2 text-slate-400 hover:text-white transition-colors"><Maximize2 size={16} /></button>
                 ) : (
@@ -196,6 +220,28 @@ const HoverBot: React.FC<HoverBotProps> = ({ inventory, onConfirmSale, onConfirm
                 <button onClick={() => setIsActive(false)} className="p-2 text-slate-400 hover:text-white transition-colors"><X size={16} /></button>
               </div>
             </div>
+
+            {showQuotaInfo && (
+              <div className="px-6 py-3 bg-gradient-to-r from-slate-900/50 to-slate-800/50 border-b border-white/5 text-xs">
+                <div className="space-y-2">
+                  <p className={`font-mono ${isQuotaExhausted() ? 'text-red-400' : isQuotaLow() ? 'text-yellow-400' : 'text-green-400'}`}>
+                    {formatQuotaStats()}
+                  </p>
+                  <div className="flex gap-2 text-slate-400">
+                    {dataSource !== 'none' && (
+                      <span className="bg-white/10 px-2 py-1 rounded text-[10px]">
+                        Last: <span className={dataSource === 'api' ? 'text-green-400' : dataSource === 'cache' ? 'text-blue-400' : 'text-yellow-400'}>{dataSource}</span>
+                      </span>
+                    )}
+                    {getCacheStats().entries > 0 && (
+                      <span className="bg-white/10 px-2 py-1 rounded text-[10px]">
+                        Cache: {getCacheStats().entries} entries
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-gradient-to-b from-transparent to-black/20">
               {isCameraActive ? (

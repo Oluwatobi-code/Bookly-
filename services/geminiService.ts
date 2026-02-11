@@ -1,10 +1,12 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { ExtractionResult, Product } from "../types";
+import { ExtractionResult, Product, ExpenseCategory } from "../types";
+import { trackApiUsage, isQuotaExhausted } from "./quotaManager";
+import { getCachedExtraction, setCachedExtraction } from "./extractionCache";
 
 // Lazy initialization to prevent crash on startup if key is missing
 const getAI = () => {
-  const key = process.env.API_KEY || '';
+  const key = process.env.GEMINI_API_KEY || '';
   if (!key) {
     console.warn("Bookly: No Gemini API Key found. AI features will be disabled.");
   }
@@ -24,6 +26,117 @@ const cleanJsonResponse = (text: string): string => {
   }
   return cleaned;
 };
+
+/**
+ * Fallback extraction using basic regex patterns
+ * Used when API is unavailable or quota is exhausted
+ */
+export const createManualFallbackStructure = (input: string): ExtractionResult => {
+  const lowerInput = input.toLowerCase();
+
+  // Patterns for different intent types
+  const expensePattern = /(?:paid|spent|cost|expense|logistics|delivery).*?(?:₦|\$)?(\d+(?:[,.\s]\d{3})*)/i;
+  const pricePattern = /(?:price|cost|amount).*?(?:₦|\$)?(\d+(?:[,.\s]\d{3})*)/i;
+  const quantityPattern = /(\d+)\s*(?:x|of|@|units?|items?)\s+(\w+)/i;
+  const productPattern = /(?:add|new|product|item).*?([a-z\s]+?)(?:price|cost|:|at|for)?/i;
+  const customerPattern = /(?:customer|user|client|john|chioma|person).*?([a-z\s]+?)(?:on|via|at|ordered|bought)?/i;
+  const platformPattern = /(?:whatsapp|instagram|facebook|telegram|phone|call|walk-in)/i;
+
+  // Try to detect expense
+  if (lowerInput.includes('paid') || lowerInput.includes('expense') || lowerInput.includes('cost')) {
+    const expenseMatch = input.match(expensePattern);
+    if (expenseMatch) {
+      const amount = parseInt(expenseMatch[1].replace(/[,.\s]/g, ''));
+      const categoryMatch = input.match(/(?:delivery|logistics|rent|utilities|supplies|marketing|salary)/i);
+
+      return {
+        intent: 'expense',
+        recordType: 'expense',
+        amount,
+        category: (categoryMatch ? categoryMatch[0].toLowerCase() : 'Other') as ExpenseCategory,
+        description: input,
+        confidence: 'low',
+        vendor: input.match(/(?:to|with|from)\s+(\w+)/i)?.[1] || 'Unknown'
+      };
+    }
+  }
+
+  // Try to detect product
+  if (lowerInput.includes('add') || lowerInput.includes('product') || lowerInput.includes('new item')) {
+    const productMatch = input.match(productPattern);
+    const priceMatch = input.match(/price.*?(?:₦|\$)?(\d+(?:[,.\s]\d{3})*)/i);
+    const costMatch = input.match(/cost.*?(?:₦|\$)?(\d+(?:[,.\s]\d{3})*)/i);
+    const stockMatch = input.match(/stock.*?(\d+)/i);
+
+    if (productMatch) {
+      return {
+        intent: 'product',
+        name: productMatch[1]?.trim() || 'New Product',
+        price: priceMatch ? parseInt(priceMatch[1].replace(/[,.\s]/g, '')) : 0,
+        costPrice: costMatch ? parseInt(costMatch[1].replace(/[,.\s]/g, '')) : 0,
+        stock: stockMatch ? parseInt(stockMatch[1]) : 0,
+        category: 'Other',
+        confidence: 'low'
+      };
+    }
+  }
+
+  // Try to detect sale
+  if (lowerInput.includes('order') || lowerInput.includes('buy') || lowerInput.includes('purchased')) {
+    const quantityMatch = input.match(quantityPattern);
+    const totalMatch = input.match(/(?:total|tsh|for).*?(?:₦|\$)?(\d+(?:[,.\s]\d{3})*)/i);
+    const platformMatch = input.match(platformPattern);
+    const deliveryMatch = input.match(/delivery.*?(?:₦|\$)?(\d+(?:[,.\s]\d{3})*)/i);
+    const customerMatch = input.match(customerPattern);
+
+    if (quantityMatch || totalMatch) {
+      return {
+        intent: 'sale',
+        recordType: 'order',
+        customerName: customerMatch ? customerMatch[1]?.trim() : 'Customer',
+        customerHandle: (customerMatch ? customerMatch[1]?.trim() : 'customer').toLowerCase().replace(/\s+/g, '_'),
+        platform: platformMatch ? (platformMatch[0] as any) : 'WhatsApp',
+        confidence: 'low',
+        orderItems: quantityMatch
+          ? [{
+              productName: quantityMatch[2] || 'Item',
+              quantity: parseInt(quantityMatch[1]),
+              unitPrice: 0
+            }]
+          : [],
+        total: totalMatch ? parseInt(totalMatch[1].replace(/[,.\s]/g, '')) : 0,
+        deliveryFee: deliveryMatch ? parseInt(deliveryMatch[1].replace(/[,.\s]/g, '')) : 0
+      };
+    }
+  }
+
+  // Default to inquiry
+  return {
+    intent: 'inquiry',
+    confidence: 'low',
+    suggestedActions: ['Manual Entry', 'Try Again', 'Contact Support']
+  };
+};
+
+/**
+ * Retry configuration interface
+ */
+export interface RetryConfig {
+  maxRetries: number;
+  initialDelayMs: number;
+  maxDelayMs: number;
+}
+
+const defaultRetryConfig: RetryConfig = {
+  maxRetries: 2,
+  initialDelayMs: 1000,
+  maxDelayMs: 5000
+};
+
+/**
+ * Sleep/delay utility
+ */
+const delay = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
 
 export const analyzeIntentAndExtract = async (
   inputs: { text?: string; imageBase64?: string }[],
@@ -64,7 +177,7 @@ INSTRUCTIONS:
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash",
       contents: { parts },
       config: {
         responseMimeType: "application/json",
@@ -143,6 +256,149 @@ INSTRUCTIONS:
     return json;
   } catch (e) {
     console.error("Extraction Failed:", e);
-    return null;
+    // Track the failure
+    trackApiUsage(100); // Small token count for failed attempt
+    throw e; // Re-throw so retry logic can handle it
   }
+};
+
+/**
+ * Retry the extraction with exponential backoff
+ * Useful for handling temporary API quota issues
+ */
+export const analyzeIntentAndExtractWithRetry = async (
+  inputs: { text?: string; imageBase64?: string }[],
+  inventory: Product[],
+  config: RetryConfig = defaultRetryConfig
+): Promise<ExtractionResult | null> => {
+  let lastError: any = null;
+
+  for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+    try {
+      const result = await analyzeIntentAndExtract(inputs, inventory);
+      if (result) return result;
+    } catch (error: any) {
+      lastError = error;
+
+      // Check if it's a quota error (429)
+      if (error?.status === 429 || error?.message?.includes('quota')) {
+        if (attempt < config.maxRetries) {
+          // Calculate exponential backoff
+          const delayMs = Math.min(
+            config.initialDelayMs * Math.pow(2, attempt),
+            config.maxDelayMs
+          );
+          console.log(
+            `⏳ Quota exceeded. Retrying in ${delayMs}ms... (Attempt ${attempt + 1}/${config.maxRetries})`
+          );
+          await delay(delayMs);
+          continue;
+        }
+      }
+
+      // For other errors, don't retry
+      break;
+    }
+  }
+
+  console.error('Extraction failed after retries:', lastError);
+  return null;
+};
+
+/**
+ * Smart extraction with all failsafes enabled
+ * Priority: Cache → API (with retry) → Fallback → Manual entry
+ */
+export interface ExtractionOptions {
+  useRetry?: boolean;
+  useCache?: boolean;
+  useFallback?: boolean;
+  maxRetries?: number;
+}
+
+export interface SmartExtractionResult {
+  result: ExtractionResult | null;
+  source: 'api' | 'cache' | 'fallback' | 'none';
+  error?: string;
+}
+
+export const smartAnalyzeAndExtract = async (
+  inputs: { text?: string; imageBase64?: string }[],
+  inventory: Product[],
+  options: ExtractionOptions = {
+    useRetry: true,
+    useCache: true,
+    useFallback: true,
+    maxRetries: 2
+  }
+): Promise<SmartExtractionResult> => {
+  const textInput = inputs.find(i => i.text)?.text || '';
+
+  // Step 1: Check if quota is exhausted first
+  if (isQuotaExhausted()) {
+    console.warn('📛 API quota exhausted, using fallback mode');
+    if (options.useFallback) {
+      const fallbackResult = createManualFallbackStructure(textInput);
+      return {
+        result: fallbackResult,
+        source: 'fallback',
+        error: 'API quota exhausted, using basic parsing'
+      };
+    }
+    return { result: null, source: 'none', error: 'API quota exhausted' };
+  }
+
+  // Step 2: Check cache
+  if (options.useCache && textInput) {
+    const cached = getCachedExtraction(textInput);
+    if (cached) {
+      return { result: cached, source: 'cache' };
+    }
+  }
+
+  // Step 3: Try API with optional retry
+  let apiResult: ExtractionResult | null = null;
+  let apiError: string = '';
+
+  try {
+    if (options.useRetry) {
+      apiResult = await analyzeIntentAndExtractWithRetry(inputs, inventory, {
+        maxRetries: options.maxRetries || 2,
+        initialDelayMs: 1000,
+        maxDelayMs: 5000
+      });
+    } else {
+      apiResult = await analyzeIntentAndExtract(inputs, inventory);
+    }
+
+    if (apiResult) {
+      // Cache successful result
+      if (options.useCache && textInput) {
+        setCachedExtraction(textInput, apiResult);
+      }
+      return { result: apiResult, source: 'api' };
+    }
+  } catch (error: any) {
+    apiError = error?.message || 'API error';
+    console.error('API extraction failed:', apiError);
+  }
+
+  // Step 4: Fallback to manual extraction
+  if (options.useFallback) {
+    const fallbackResult = createManualFallbackStructure(textInput);
+    if (fallbackResult.intent !== 'inquiry' || fallbackResult.suggestedActions?.length === 0) {
+      return {
+        result: fallbackResult,
+        source: 'fallback',
+        error: 'Using basic parsing mode'
+      };
+    }
+  }
+
+  // Step 5: Return error
+  return {
+    result: null,
+    source: 'none',
+    error: 'Could not extract data. Please enter manually.'
+  };
 };
