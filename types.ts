@@ -58,7 +58,8 @@ export interface Transaction {
   variant?: string;
   address?: string;
   isArchived?: boolean;
-  editHistory?: EditLog[];
+  editHistory: EditLog[];
+  items?: OrderItem[];
 }
 
 export type ExpenseCategory = 'Logistics' | 'Marketing' | 'Supplies' | 'Rent' | 'Utilities' | 'Salary' | 'Other';

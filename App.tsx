@@ -33,6 +33,7 @@ import InvoiceModal from './components/InvoiceModal';
 import EditTransactionModal from './components/EditTransactionModal';
 import ConfirmSaleModal from './components/ConfirmSaleModal';
 import ManualEntryModal from './components/ManualEntryModal';
+import { InvoiceGenerator } from './components/InvoiceGenerator';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>('onboarding');
@@ -45,6 +46,7 @@ const App: React.FC = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [pendingSale, setPendingSale] = useState<ExtractedSale | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   const [filters, setFilters] = useState<FilterState>({
     customerHandles: [], platforms: [], status: [], dateRange: { start: '', end: '' }, months: [], productNames: [], tiers: []
@@ -162,28 +164,56 @@ const App: React.FC = () => {
     const timestamp = new Date().toISOString();
     const newTransactions: Transaction[] = [];
 
-    saleData.customers?.forEach(customer => {
+    // Handle new flat format or legacy customers array
+    const ordersToProcess = saleData.orderItems ? [{
+      handle: saleData.customerName || saleData.customerHandle || 'Customer',
+      items: saleData.orderItems,
+      deliveryFee: saleData.deliveryFee || 0,
+      paymentMethod: saleData.paymentMethod || 'Cash/Transfer',
+      platform: saleData.platform || 'WhatsApp',
+      orderTotal: saleData.total
+    }] : (saleData as any).customers || [];
+
+    ordersToProcess.forEach((customer: any) => {
       const source = customer.platform || businessProfile?.defaultSalesSource || 'WhatsApp';
       const paymentMethod = customer.paymentMethod || 'Cash/Transfer';
       const deliveryFee = customer.deliveryFee || 0;
       const feePercent = paymentMethod === 'Bookly Wallet' ? 0.025 : 0;
 
-      customer.items?.forEach(item => {
-        const product = products.find(p => p.name.toLowerCase().includes(item.productName.toLowerCase())) || products[0] || { id: 'temp', price: 0, costPrice: 0, name: item.productName };
+      const items = customer.items || customer.orderItems || [];
+
+      items.forEach((item: any) => {
+        const productName = item.productName || '';
+        const product = products.find(p => p.name.toLowerCase().includes(productName.toLowerCase())) || products[0] || { id: 'temp', price: 0, costPrice: 0, name: productName };
         const qty = item.quantity || 1;
 
         const basePrice = typeof item.unitPrice === 'number' ? item.unitPrice : product.price;
         const subtotal = basePrice * qty;
         const fee = subtotal * feePercent;
-        const total = subtotal + fee + (newTransactions.length === 0 ? deliveryFee : 0); // Only add delivery fee once per order block
+        const total = subtotal + fee + (newTransactions.length === 0 ? deliveryFee : 0);
 
         const newT: Transaction = {
           id: Math.random().toString(36).substr(2, 9),
-          customerId: 'new', customerHandle: customer.handle,
-          productId: product.id, productName: product.name || item.productName,
-          quantity: qty, total, costTotal: (product.costPrice || 0) * qty,
+          customerId: 'new',
+          customerHandle: customer.handle || customer.customerName || 'Customer',
+          productId: product.id,
+          productName: product.name || productName,
+          quantity: qty,
+          total,
+          costTotal: (product.costPrice || 0) * qty,
           deliveryFee: newTransactions.length === 0 ? deliveryFee : 0,
-          timestamp, status: 'confirmed', source, paymentMethod, fee, isArchived: false, editHistory: []
+          timestamp,
+          status: 'confirmed',
+          source: source as any,
+          paymentMethod,
+          fee,
+          isArchived: false,
+          editHistory: [],
+          items: items.map((i: any) => ({
+            productName: i.productName,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice
+          }))
         };
 
         newTransactions.push(newT);
@@ -193,19 +223,21 @@ const App: React.FC = () => {
         }
       });
 
-      const existingC = customers.find(c => c.handle === customer.handle);
+      const handle = customer.handle || customer.customerName || 'Customer';
+      const existingC = customers.find(c => c.handle === handle);
       const val = customer.orderTotal || 0;
       if (existingC) {
-        setCustomers(prev => prev.map(c => c.handle === customer.handle ? { ...c, orderCount: c.orderCount + 1, ltv: c.ltv + val, lastActive: 'Just now' } : c));
-      } else if (customer.handle) {
-        setCustomers(prev => [{ id: Math.random().toString(36).substr(2, 9), handle: customer.handle, name: customer.handle.replace('@', ''), orderCount: 1, ltv: val, channel: source, lastActive: 'Just now' }, ...prev]);
-        notify("New Customer", `Profile created for ${customer.handle}`, "info");
+        setCustomers(prev => prev.map(c => c.handle === handle ? { ...c, orderCount: c.orderCount + 1, ltv: c.ltv + val, lastActive: 'Just now' } : c));
+      } else if (handle) {
+        setCustomers(prev => [{ id: Math.random().toString(36).substr(2, 9), handle: handle, name: handle.replace('@', ''), orderCount: 1, ltv: val, channel: source, lastActive: 'Just now' }, ...prev]);
+        notify("New Customer", `Profile created for ${handle}`, "info");
       }
     });
 
     if (newTransactions.length > 0) {
       setTransactions(prev => [...newTransactions, ...prev]);
       setViewingTransaction(newTransactions[0]);
+      setShowInvoice(true); // Automatically show invoice for the new order
       notify("Order Finalized", `${newTransactions.length} items logged successfully.`, "success");
     }
 
@@ -321,6 +353,13 @@ const App: React.FC = () => {
       <ManualEntryModal isOpen={isManualSaleModalOpen} onClose={() => setIsManualSaleModalOpen(false)} inventory={products} onConfirm={(s) => setPendingSale(s)} businessProfile={businessProfile} customers={customers} />
       <InvoiceModal isOpen={!!viewingTransaction} onClose={() => setViewingTransaction(null)} transaction={viewingTransaction} businessProfile={businessProfile} customer={customers.find(c => c.handle === viewingTransaction?.customerHandle) || null} />
       {editingTransaction && <EditTransactionModal isOpen={!!editingTransaction} onClose={() => setEditingTransaction(null)} transaction={editingTransaction} onUpdate={(id, updates) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t))} />}
+      {viewingTransaction && showInvoice && businessProfile && (
+        <InvoiceGenerator
+          transaction={viewingTransaction}
+          businessProfile={businessProfile}
+          onClose={() => setShowInvoice(false)}
+        />
+      )}
       {pendingSale && <ConfirmSaleModal isOpen={!!pendingSale} onClose={() => setPendingSale(null)} onConfirm={(editedData) => commitSale(editedData)} saleData={pendingSale} products={products} businessProfile={businessProfile} />}
     </div>
   );
