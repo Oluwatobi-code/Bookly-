@@ -43,6 +43,7 @@ const SOURCES: SalesSource[] = ['WhatsApp', 'Instagram', 'Facebook', 'Walk-in', 
 
 const Settings: React.FC<SettingsProps> = ({ businessProfile, setBusinessProfile }) => {
   const [activeEdit, setActiveEdit] = useState<EditSection>('none');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!businessProfile) return null;
 
@@ -51,6 +52,33 @@ const Settings: React.FC<SettingsProps> = ({ businessProfile, setBusinessProfile
       ...businessProfile,
       defaultSalesSource: e.target.value as SalesSource
     });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
+      setBusinessProfile({
+        ...businessProfile,
+        logo: base64String
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const toggleNotifications = () => {
@@ -330,12 +358,31 @@ const SettingsModal: React.FC<{
                   placeholder="Thank you for your patronage!"
                 />
               </div>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
-                <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
-                  <Camera size={20} />
-                </div>
-                <p className="text-xs font-bold text-slate-600">Upload Logo</p>
-                <p className="text-[10px] text-slate-400">Recommended: 500x500px PNG</p>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center space-y-2 cursor-pointer hover:bg-slate-100 hover:border-[#2DD4BF] transition-all"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                {profile.logo ? (
+                  <>
+                    <img src={profile.logo} alt="Business Logo" className="w-16 h-16 mx-auto rounded-xl object-cover border border-slate-200" />
+                    <p className="text-xs font-bold text-slate-600">Click to change logo</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
+                      <Camera size={20} />
+                    </div>
+                    <p className="text-xs font-bold text-slate-600">Upload Logo</p>
+                    <p className="text-[10px] text-slate-400">Recommended: 500x500px PNG</p>
+                  </>
+                )}
               </div>
             </>
           )}
