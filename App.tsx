@@ -381,7 +381,21 @@ const App: React.FC = () => {
             onViewInvoice={setViewingTransaction}
           />
         )}
-        {view === 'orders' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
+        {view === 'orders' && (
+          <SalesView
+            transactions={transactions}
+            filters={filters}
+            setFilters={setFilters}
+            products={products}
+            customers={customers}
+            vipThreshold={businessProfile?.vipThreshold || 5}
+            onViewInvoice={setViewingTransaction}
+            onArchive={(id) => setTransactions(prev => prev.map(t => t.id === id ? { ...t, isArchived: !t.isArchived } : t))}
+            onEdit={setEditingTransaction}
+            currency={currency}
+            onStatusChange={handleUpdateTransactionStatus}
+          />
+        )}
         {view === 'crm' && <CRM customers={customers} transactions={transactions} businessProfile={businessProfile} onOpenAddCustomer={() => setIsAddCustomerModalOpen(true)} onViewInvoice={setViewingTransaction} />}
         {view === 'inventory' && <Inventory products={products} setProducts={handleUpdateStock} onOpenAddProduct={() => setIsAddProductModalOpen(true)} businessProfile={businessProfile} />}
         {view === 'settings' && <Settings businessProfile={businessProfile} setBusinessProfile={setBusinessProfile} />}
